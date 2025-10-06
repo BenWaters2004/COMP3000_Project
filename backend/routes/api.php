@@ -2,6 +2,8 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ConsentController;
+use App\Http\Controllers\ScanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,3 +28,8 @@ Route::get('/ping', function (Request $request) {
         'time' => now()->toDateTimeString()
     ]);
 });
+
+Route::post('/consent', [ConsentController::class, 'store']);
+Route::post('/scans/start', [ScanController::class, 'start']);        // start (skeleton)
+Route::post('/scans/results', [ScanController::class, 'storeResults']); // internal use
+Route::get('/scans/result/{id}/summary', [ScanController::class, 'summary']);
