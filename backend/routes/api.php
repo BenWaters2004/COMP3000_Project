@@ -2,8 +2,10 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ConsentController;
-use App\Http\Controllers\ScanController;
+
+use App\Http\Controllers\Api\ScanController;
+use App\Http\Controllers\Api\EmailController;
+use App\Services\SpiderFootService;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,14 +24,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 ##################
 
-Route::get('/ping', function (Request $request) {
-    return response()->json([
-        'status' => 'ok',
-        'time' => now()->toDateTimeString()
-    ]);
+Route::post('/scan', [ScanController::class, 'initiate']);
+Route::get('/scan/{id}', [ScanController::class, 'results']);
+Route::post('/email/{id}', [EmailController::class, 'generate']);
+Route::get('/spiderfoot/health', function (SpiderFootService $svc) {
+    return response()->json(['ok' => $svc->health()]);
 });
-
-Route::post('/consent', [ConsentController::class, 'store']);
-Route::post('/scans/start', [ScanController::class, 'start']);        // start (skeleton)
-Route::post('/scans/results', [ScanController::class, 'storeResults']); // internal use
-Route::get('/scans/result/{id}/summary', [ScanController::class, 'summary']);
