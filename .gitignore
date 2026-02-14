@@ -13,3 +13,20 @@ agent/theHarvester/api-keys.yaml
 __pycache__/
 *.py[cod]
 *.egg-info/
+
+# Virtual environments
+venv/
+venv-py312/
+agent/venv-py312/
+
+# theHarvester temp files
+agent/theHarvester/.theHarvester/
+agent/theHarvester/proxies.yaml
+agent/theHarvester/api-keys.yaml
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
