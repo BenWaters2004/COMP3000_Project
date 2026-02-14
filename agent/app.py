@@ -13,52 +13,87 @@ load_dotenv()
 
 app = FastAPI(title="AIDEN OSINT Agent")
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
+llm = ChatOpenAI(model="gpt-4o", temperature=0.3)
 
-def run_theharvester(query: str) -> str:
-    """Run TheHarvester (uses the active venv)."""
+# ==================== TOOLS ====================
+
+def run_theharvester(domain: str) -> str:
     try:
-        domain = query.split()[-1]
-        cmd = [
-            "python",
-            "theHarvester.py",
-            "-d", domain,
-            "-l", "300",
-            "-b", "duckduckgo,yahoo,crtsh,dnsdumpster,hackertarget,otx"  # Reliable free sources
+        cmd = ["python", "theHarvester.py", "-d", domain, "-l", "300", "-b", "duckduckgo,yahoo,crtsh,dnsdumpster,hackertarget,otx,linkedin"]
+        result = subprocess.run(cmd, cwd="/home/ben/COMP3000/agent/theHarvester", capture_output=True, text=True, timeout=180)
+        return result.stdout.strip() or "No domain data found."
+    except Exception as e:
+        return f"TheHarvester error: {str(e)}"
+
+def run_sherlock(name: str) -> str:
+    """Smart multi-variation Sherlock - fast & effective."""
+    try:
+        parts = name.lower().split()
+        first = parts[0]
+        last = parts[-1]
+        base = first + last
+
+        variations = [
+            base, base + "official", first + "." + last, first + "_" + last,
+            first[:1] + last, last + first, base[:10], base + "hq",
+            first + last[:4], base.replace(" ", ""), first + last[0]
         ]
-        result = subprocess.run(
-            cmd,
-            cwd="/home/ben/COMP3000/agent/theHarvester",
-            capture_output=True,
-            text=True,
-            timeout=180,
-        )
 
-        if result.returncode != 0:
-            return f"Tool error: {result.stderr.strip() or result.stdout.strip() or 'no output'}"
+        results = []
+        for username in variations[:8]:
+            cmd = ["sherlock", username, "--timeout", "10", "--print-found", "--no-color"]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=90)
+            if "[+]" in result.stdout:
+                results.append(f"→ {username}\n{result.stdout.strip()}\n")
 
-        output = result.stdout.strip()
-        return output if output else "TheHarvester ran but found no public data for this domain."
+        return "\n".join(results) if results else f"No major accounts found for '{name}'"
 
     except Exception as e:
-        return f"Execution error: {str(e)}"
+        return f"Sherlock error: {str(e)}"
 
-osint_tool = Tool(
-    name="TheHarvester",
-    func=run_theharvester,
-    description="Use this to gather real OSINT (emails, hosts, LinkedIn, etc.) for a domain. Always call it with the domain only."
-)
+def run_haveibeenpwned(email: str) -> str:
+    try:
+        import requests
+        headers = {"hibp-api-key": os.getenv("HIBP_API_KEY"), "User-Agent": "AIDEN-OSINT-Agent"}
+        r = requests.get(f"https://haveibeenpwned.com/api/v3/breachedaccount/{email}", headers=headers, timeout=15)
+        if r.status_code == 200:
+            breaches = [b['Name'] for b in r.json()]
+            return f"Found in {len(breaches)} breaches: {', '.join(breaches[:12])}"
+        elif r.status_code == 404:
+            return "Email not found in any known breaches."
+        else:
+            return f"HIBP error: {r.status_code}"
+    except Exception as e:
+        return f"Breaches check error: {str(e)}"
 
-# Modern ranking
+theharvester_tool = Tool(name="TheHarvester", func=run_theharvester, description="Domain OSINT (emails, hosts, subdomains). Input: domain.")
+sherlock_tool = Tool(name="Sherlock", func=run_sherlock, description="Username search across social networks. Input: full name.")
+hibp_tool = Tool(name="HaveIBeenPwned", func=run_haveibeenpwned, description="Check email for data breaches. Input: email.")
+
+tools = [theharvester_tool, sherlock_tool, hibp_tool]
+
+# ==================== RANKING ====================
+
 ranking_prompt = PromptTemplate.from_template(
-    "Rank the following OSINT data for a security awareness report:\n"
-    "- Accuracy (1-10, based on source credibility)\n"
-    "- Usefulness (1-10, for training e.g., phishing risk, data exposure)\n"
-    "Explain briefly. Data:\n{data}"
+    """You are a senior security awareness trainer. Analyze the OSINT data and return **ONLY** valid JSON.
+
+Return this exact structure:
+{{
+  "accuracy": <1-10>,
+  "usefulness": <1-10>,
+  "risk_level": "Low|Medium|High|Critical",
+  "key_findings": ["bullet 1", "bullet 2", ...],
+  "training_recommendations": ["specific recommendation 1", "specific recommendation 2", ...]
+}}
+
+Data:
+{data}"""
 )
+
 ranking_chain = RunnableSequence(ranking_prompt | llm)
 
-# Standard ReAct prompt (this fixes the error)
+# ==================== AGENT ====================
+
 prompt = PromptTemplate.from_template(
     """Answer the following questions as best you can. You have access to the following tools:
 
@@ -81,9 +116,10 @@ Question: {input}
 Thought: {agent_scratchpad}"""
 )
 
-tools = [osint_tool]
 agent = create_react_agent(llm=llm, tools=tools, prompt=prompt)
-agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True, max_iterations=6)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, max_iterations=10)
+
+# ==================== ENDPOINT ====================
 
 class EmployeeInput(BaseModel):
     full_name: str
@@ -93,21 +129,17 @@ class EmployeeInput(BaseModel):
 @app.post("/gather_osint")
 async def gather_osint(employee: EmployeeInput):
     try:
-        query = f"{employee.full_name} {employee.domain}"
-        
         agent_result = agent_executor.invoke({
-            "input": f"Fetch real OSINT on {employee.full_name} at {employee.domain} for security training."
+            "input": f"Perform full OSINT on {employee.full_name} ({employee.email}) at {employee.domain} for security awareness training."
         })
+
         raw_results = agent_result["output"]
 
-        # Strong fallback
-        if "error" in raw_results.lower() or "no output" in raw_results.lower() or len(raw_results) < 30:
-            raw_results = run_theharvester(query)
-
         ranked = ranking_chain.invoke({"data": raw_results})
-        ranked_text = ranked.content if hasattr(ranked, 'content') else str(ranked)
+        ranked_text = ranked.content.strip()
 
         return {"raw_results": raw_results, "ranked": ranked_text}
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
