@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\OrganisationAdminController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\OrganisationSettingsController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\OsintController;
 
 use App\Services\SpiderFootService;
 
@@ -42,7 +43,10 @@ Route::get('/spiderfoot/health', function (SpiderFootService $svc) {
     return response()->json(['ok' => $svc->health()]);
 });
 
-Route::post('/osint/gather', [OsintController::class, 'gatherOsint']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/osint/generate', [OsintController::class, 'generate']);
+});
 
 
 Route::post('/organisations', [OrganisationController::class, 'store']);

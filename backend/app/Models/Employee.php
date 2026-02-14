@@ -13,5 +13,9 @@ class Employee extends Model
         'email',
         'job_title',
         'department',
+        'osint_raw',
+        'osint_ranked',
+        'osint_status', 
+        'osint_last_run'
     ];
 }

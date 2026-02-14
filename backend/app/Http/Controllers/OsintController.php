@@ -2,40 +2,62 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\Employee;
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\RequestException;
-// Assume you have Employee model; adjust as needed
+use Illuminate\Http\Request;
 
 class OsintController extends Controller
 {
-    protected $agentApiUrl = 'http://localhost:8000/gather_osint';  // Update to your Python service URL
-
-    public function gatherOsint(Request $request)
+    public function generate(Request $request)
     {
-        $this->middleware('auth');  // Tie to your login system
-
         $request->validate([
-            'full_name' => 'required|string',
-            'email' => 'required|email',
-            'domain' => 'required|string',
+            'employee_id' => 'required|exists:employees,id'
         ]);
 
-        // Optional: Check consent flag in DB before proceeding
+        $employee = Employee::findOrFail($request->employee_id);
 
-        $client = new Client();
+        // Prevent running again if already completed recently
+        if ($employee->osint_status === 'completed' && $employee->osint_last_run?->gt(now()->subHours(24))) {
+            return response()->json(['message' => 'OSINT already up to date'], 200);
+        }
+
+        $client = new Client(['timeout' => 300]); // 5 minutes max
+
         try {
-            $response = $client->post($this->agentApiUrl, [
-                'json' => $request->only(['full_name', 'email', 'domain']),
+            $response = $client->post('http://127.0.0.1:8001/gather_osint', [
+                'json' => [
+                    'full_name' => $employee->first_name . ' ' . $employee->last_name,
+                    'email'     => $employee->email,
+                    'domain'    => $employee->organisation->website 
+                        ? parse_url($employee->organisation->website, PHP_URL_HOST) 
+                        : 'company.com',
+                ]
             ]);
+
             $data = json_decode($response->getBody(), true);
 
-            // Store results (e.g., in Employee model or reports table for visualizations)
-            // Employee::createOrUpdate([... , 'osint_report' => json_encode($data)]);
+            $employee->update([
+                'osint_raw'      => $data['raw_results'] ?? null,
+                'osint_ranked'   => $data['ranked'] ?? null,
+                'osint_status'   => 'completed',
+                'osint_last_run' => now(),
+            ]);
 
-            return response()->json($data);
-        } catch (RequestException $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json([
+                'success' => true,
+                'data'    => $data
+            ]);
+
+        } catch (\Exception $e) {
+            $employee->update([
+                'osint_status'   => 'failed',
+                'osint_last_run' => now(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error'   => $e->getMessage()
+            ], 500);
         }
     }
 }

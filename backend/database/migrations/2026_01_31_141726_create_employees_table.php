@@ -21,6 +21,12 @@ return new class extends Migration {
             $table->string('job_title', 120)->nullable();
             $table->string('department', 120)->nullable();
 
+            //OSINT
+            $table->longText('osint_raw')->nullable();
+            $table->longText('osint_ranked')->nullable();
+            $table->string('osint_status')->default('pending'); // pending, completed, failed
+            $table->timestamp('osint_last_run')->nullable();
+
             $table->timestamps();
 
             // enforce unique email per organisation

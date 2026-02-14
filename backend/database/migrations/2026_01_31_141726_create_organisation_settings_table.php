@@ -15,7 +15,7 @@ return new class extends Migration {
                 ->cascadeOnDelete();
 
             $table->string('simulation_frequency', 20)->default('weekly'); // daily/weekly/biweekly/monthly
-            $table->string('timezone', 60)->default('America/New_York');
+            $table->string('timezone', 60);
             $table->dateTime('start_at')->nullable();
 
             $table->timestamps();
