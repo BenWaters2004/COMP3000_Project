@@ -1,1 +1,15 @@
 node_modules/\n/vendor/\n/.env\n/public/storage\n/storage/*.key\n.DS_Store
+# Virtual environments
+venv/
+venv-py312/
+agent/venv-py312/
+
+# theHarvester caches and temp files
+agent/theHarvester/.theHarvester/
+agent/theHarvester/proxies.yaml
+agent/theHarvester/api-keys.yaml
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.egg-info/
