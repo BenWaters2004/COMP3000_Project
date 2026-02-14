@@ -30,3 +30,14 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 .mypy_cache/
+
+# Environment variables - NEVER commit these!
+.env
+agent/.env
+*.env
+
+# Venvs (already should be there)
+venv/
+venv-py312/
+agent/venv-py312/
+
