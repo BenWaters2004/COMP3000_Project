@@ -1,3 +1,6 @@
 [submodule "agent/theHarvester"]
 	path = agent/theHarvester
 	url = https://github.com/laramies/theHarvester
+[submodule "agent/sherlock"]
+	path = agent/sherlock
+	url = https://github.com/sherlock-project/sherlock
