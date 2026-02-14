@@ -41,6 +41,10 @@ Route::post('/email/{id}', [EmailController::class, 'generate']);
 Route::get('/spiderfoot/health', function (SpiderFootService $svc) {
     return response()->json(['ok' => $svc->health()]);
 });
+
+Route::post('/osint/gather', [OsintController::class, 'gatherOsint']);
+
+
 Route::post('/organisations', [OrganisationController::class, 'store']);
 Route::middleware('auth:sanctum')->put('/organisations/{organisation}', [OrganisationController::class, 'update']);
 Route::post('/organisations/{organisation}/admin', [OrganisationAdminController::class, 'store']);
@@ -52,6 +56,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/organisations/{organisation}/employees/bulk', [EmployeeController::class, 'bulkStore']);
     Route::put('/organisations/{organisation}/settings', [OrganisationSettingsController::class, 'update']);
+
+    
+    Route::get('/organisations/{organisation}/employees', [EmployeeController::class, 'index']);
 
     Route::get('/me', function (Request $request) {
         return $request->user();

@@ -1,0 +1,3 @@
+[submodule "agent/theHarvester"]
+	path = agent/theHarvester
+	url = https://github.com/laramies/theHarvester

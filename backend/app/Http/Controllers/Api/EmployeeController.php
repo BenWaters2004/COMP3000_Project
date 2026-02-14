@@ -74,4 +74,34 @@ class EmployeeController extends Controller
             'count' => count($rows),
         ], 201);
     }
+
+    public function index(Request $request, Organisation $organisation)
+    {
+        $user = $request->user();
+
+        if ((int)$user->organisation_id !== (int)$organisation->id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $query = Employee::where('organisation_id', $organisation->id)
+            ->orderBy('last_name')
+            ->orderBy('first_name');
+
+        // optional search query: ?q=...
+        if ($request->filled('q')) {
+            $q = trim($request->query('q'));
+            $query->where(function ($sub) use ($q) {
+                $sub->where('first_name', 'like', "%{$q}%")
+                    ->orWhere('last_name', 'like', "%{$q}%")
+                    ->orWhere('email', 'like', "%{$q}%")
+                    ->orWhere('department', 'like', "%{$q}%")
+                    ->orWhere('job_title', 'like', "%{$q}%");
+            });
+        }
+
+        return response()->json([
+            'employees' => $query->get(),
+        ]);
+    }
+
 }

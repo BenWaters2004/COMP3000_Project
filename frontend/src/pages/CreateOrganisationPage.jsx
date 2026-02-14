@@ -2,6 +2,8 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 
+import axios from 'axios';
+
 const STEPS = [
   { key: "org", label: "Organisation" },
   { key: "admin", label: "Admin Account" },
@@ -389,6 +391,19 @@ export default function OrgSetupWizard() {
       }
     } finally {
       setSubmitting(false);
+
+      const handleGatherOsint = async (employees) => {
+        try {
+          const response = await axios.post('/api/osint/gather', employees, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },  // Tie to your login
+          });
+          console.log('OSINT Results:', response.data);  // Display in UI, e.g., for training report
+        } catch (error) {
+          console.error('Error gathering OSINT:', error);
+        }
+      };
+
+      handleGatherOsint(employees);
     }
   }
 

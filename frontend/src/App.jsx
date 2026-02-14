@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 import LoginPage from "./pages/LoginPage";
 import CreateOrganisationPage from './pages/CreateOrganisationPage';
+import DashboardPage from "./pages/DashboardPage.jsx";
 
 
 export default function App() {
@@ -16,7 +17,7 @@ export default function App() {
           <Route index element={<CreateOrganisationPage />} />
           <Route path="/setup" element={<CreateOrganisationPage />} />
           <Route path="/login" element={<LoginPage />} />
-          {/* <Route path="/dashboard" element={<Dashboard />} /> */}
+          <Route path="/dashboard" element={<DashboardPage />} />
         </Routes>
       </BrowserRouter>
     </div>
