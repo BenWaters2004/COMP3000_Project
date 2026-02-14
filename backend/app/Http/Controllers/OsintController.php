@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Employee;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class OsintController extends Controller
 {
@@ -14,28 +15,45 @@ class OsintController extends Controller
             'employee_id' => 'required|exists:employees,id'
         ]);
 
-        $employee = Employee::findOrFail($request->employee_id);
+        $employee = Employee::with('organisation')->findOrFail($request->employee_id);
 
-        // Prevent running again if already completed recently
-        if ($employee->osint_status === 'completed' && $employee->osint_last_run?->gt(now()->subHours(24))) {
-            return response()->json(['message' => 'OSINT already up to date'], 200);
+        // If we have recent data (last 6 hours), return it immediately
+        if ($employee->osint_status === 'completed' && $employee->osint_last_run) {
+            $lastRun = Carbon::parse($employee->osint_last_run);
+            if ($lastRun->gt(now()->subHours(6))) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'raw_results' => $employee->osint_raw,
+                        'ranked' => $employee->osint_ranked,
+                    ]
+                ]);
+            }
         }
 
-        $client = new Client(['timeout' => 300]); // 5 minutes max
+        // Run the agent
+        $client = new Client([
+            'timeout' => 420,           // 7 minutes
+            'connect_timeout' => 30,
+        ]);
 
         try {
+            $domain = 'company.com';
+            if ($employee->organisation && $employee->organisation->website) {
+                $domain = parse_url($employee->organisation->website, PHP_URL_HOST) ?? 'company.com';
+            }
+
             $response = $client->post('http://127.0.0.1:8001/gather_osint', [
                 'json' => [
-                    'full_name' => $employee->first_name . ' ' . $employee->last_name,
+                    'full_name' => trim($employee->first_name . ' ' . $employee->last_name),
                     'email'     => $employee->email,
-                    'domain'    => $employee->organisation->website 
-                        ? parse_url($employee->organisation->website, PHP_URL_HOST) 
-                        : 'company.com',
+                    'domain'    => $domain,
                 ]
             ]);
 
             $data = json_decode($response->getBody(), true);
 
+            // Save the result
             $employee->update([
                 'osint_raw'      => $data['raw_results'] ?? null,
                 'osint_ranked'   => $data['ranked'] ?? null,

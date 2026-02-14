@@ -12,8 +12,6 @@ use App\Http\Controllers\Api\OrganisationSettingsController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\OsintController;
 
-use App\Services\SpiderFootService;
-
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -39,9 +37,6 @@ Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
 Route::post('/scan', [ScanController::class, 'initiate']);
 Route::get('/scan/{id}', [ScanController::class, 'results']);
 Route::post('/email/{id}', [EmailController::class, 'generate']);
-Route::get('/spiderfoot/health', function (SpiderFootService $svc) {
-    return response()->json(['ok' => $svc->health()]);
-});
 
 
 Route::middleware('auth:sanctum')->group(function () {

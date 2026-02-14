@@ -73,17 +73,16 @@ hibp_tool = Tool(name="HaveIBeenPwned", func=run_haveibeenpwned, description="Ch
 tools = [theharvester_tool, sherlock_tool, hibp_tool]
 
 # ==================== RANKING ====================
-
 ranking_prompt = PromptTemplate.from_template(
-    """You are a senior security awareness trainer. Analyze the OSINT data and return **ONLY** valid JSON.
+    """You are a security awareness expert. Return **ONLY** valid JSON. No markdown, no code blocks, no extra text.
 
 Return this exact structure:
 {{
-  "accuracy": <1-10>,
-  "usefulness": <1-10>,
-  "risk_level": "Low|Medium|High|Critical",
-  "key_findings": ["bullet 1", "bullet 2", ...],
-  "training_recommendations": ["specific recommendation 1", "specific recommendation 2", ...]
+  "accuracy": <integer 1-10>,
+  "usefulness": <integer 1-10>,
+  "risk_level": "Low" or "Medium" or "High" or "Critical",
+  "key_findings": ["short bullet 1", "short bullet 2", ...],
+  "training_recommendations": ["specific training idea 1", "specific training idea 2", ...]
 }}
 
 Data:

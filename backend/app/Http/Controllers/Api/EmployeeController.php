@@ -83,7 +83,8 @@ class EmployeeController extends Controller
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        $query = Employee::where('organisation_id', $organisation->id)
+        $query = Employee::with('organisation')
+            ->where('organisation_id', $organisation->id)
             ->orderBy('last_name')
             ->orderBy('first_name');
 

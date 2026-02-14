@@ -18,4 +18,9 @@ class Employee extends Model
         'osint_status', 
         'osint_last_run'
     ];
+
+    public function organisation()
+    {
+        return $this->belongsTo(Organisation::class);
+    }
 }
