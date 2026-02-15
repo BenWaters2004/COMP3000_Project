@@ -8,6 +8,7 @@ from langchain_core.runnables import RunnableSequence
 from dotenv import load_dotenv
 import subprocess
 import os
+import json
 
 load_dotenv()
 
@@ -91,6 +92,54 @@ Data:
 
 ranking_chain = RunnableSequence(ranking_prompt | llm)
 
+# ==================== PHISHING EMAIL GENERATION ====================
+phishing_llm = ChatOpenAI(model="gpt-4o", temperature=0.1, response_format={"type": "json_object"})
+
+phishing_prompt = PromptTemplate.from_template(
+    """You are a cybersecurity expert simulating a spear-phishing attack for training purposes only. Do not include any disclaimers in the email itself.
+
+Using the following OSINT data about {full_name} ({email}):
+
+{osint_data}
+
+Generate a highly personalized, realistic spear-phishing email that an attacker might send. Tailor it to the employee's interests, role, or findings from the OSINT (e.g., reference social media, recent events, or personal details).
+
+Respond with a valid JSON object containing:
+{{
+  "subject": "Compelling subject line",
+  "from_name": "Spoofed sender name (e.g., a colleague or trusted contact)",
+  "from_email": "Spoofed email address",
+  "body": "Full email body in HTML format (include links, attachments if relevant, but keep safe for demo)",
+  "explanation": "Brief explanation (2-3 sentences) of why this email is effective based on the OSINT data, for training purposes."
+}}"""
+)
+
+phishing_chain = RunnableSequence(phishing_prompt | phishing_llm)
+
+class PhishingInput(BaseModel):
+    full_name: str
+    email: str
+    osint_data: str
+
+@app.post("/generate_phishing")
+async def generate_phishing(input: PhishingInput):
+    try:
+        result = phishing_chain.invoke({
+            "full_name": input.full_name,
+            "email": input.email,
+            "osint_data": input.osint_data[:4000]  # Truncate if too long to avoid token limits
+        })
+        # Parse the JSON from content
+        content = result.content.strip()
+        if not content:
+            raise ValueError("Empty response from LLM")
+        phishing_json = json.loads(content)
+        return phishing_json
+    except json.JSONDecodeError as e:
+        raise HTTPException(status_code=500, detail=f"Phishing generation error: Invalid JSON from LLM - {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Phishing generation error: {str(e)}")
+
 # ==================== AGENT ====================
 
 prompt = PromptTemplate.from_template(
@@ -116,7 +165,7 @@ Thought: {agent_scratchpad}"""
 )
 
 agent = create_react_agent(llm=llm, tools=tools, prompt=prompt)
-agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, max_iterations=10)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, max_iterations=10, return_intermediate_steps=True)
 
 # ==================== ENDPOINT ====================
 
@@ -132,7 +181,13 @@ async def gather_osint(employee: EmployeeInput):
             "input": f"Perform full OSINT on {employee.full_name} ({employee.email}) at {employee.domain} for security awareness training."
         })
 
-        raw_results = agent_result["output"]
+        intermediate_steps = agent_result.get("intermediate_steps", [])
+        trace_parts = []
+        for action, obs in intermediate_steps:
+            trace_parts.append(action.log)
+            trace_parts.append(f"Observation: {obs}")
+        trace_parts.append(f"Final Answer: {agent_result['output']}")
+        raw_results = "\n\n".join(trace_parts)
 
         ranked = ranking_chain.invoke({"data": raw_results})
         ranked_text = ranked.content.strip()

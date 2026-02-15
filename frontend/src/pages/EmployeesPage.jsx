@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import OsintReport from '../components/OsintReport';
+import PhishingModal from '../components/PhishingModal';
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [report, setReport] = useState(null);
+  const [selectedPhishingEmployee, setSelectedPhishingEmployee] = useState(null);
+  const [phishingData, setPhishingData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
   const token = localStorage.getItem('auth_token');
@@ -50,6 +53,29 @@ export default function EmployeesPage() {
       setReport(res.data.data);
     } catch (err) {
       alert("Failed to run OSINT: " + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const openPhishingModal = async (employee) => {
+    setSelectedPhishingEmployee(employee);
+    setPhishingData(null);
+  };
+
+  const closePhishingModal = () => {
+    setSelectedPhishingEmployee(null);
+    setPhishingData(null);
+  };
+
+  const generatePhishing = async (employee) => {
+    try {
+      const res = await api.post('/api/osint/generate-phishing', {
+        employee_id: employee.id
+      });
+      // Refresh phishing data
+      setPhishingData(res.data.data);
+      alert("Phishing email generated successfully!");
+    } catch (err) {
+      alert("Failed to generate phishing email: " + (err.response?.data?.error || err.message));
     }
   };
 
@@ -119,6 +145,12 @@ export default function EmployeesPage() {
                   >
                     View OSINT
                   </button>
+                  <button 
+                    onClick={() => openPhishingModal(emp)}
+                    className="text-purple-600 hover:text-purple-700 font-medium"
+                  >
+                    {emp.phishing_email ? 'View Phishing Email' : 'Generate & View Email'}
+                  </button>
                   <button className="text-amber-600 hover:text-amber-700 font-medium">Edit</button>
                   <button 
                     onClick={() => deleteEmployee(emp.id)}
@@ -139,6 +171,16 @@ export default function EmployeesPage() {
           report={report} 
           token={token}
           onClose={() => setSelectedEmployee(null)} 
+        />
+      )}
+
+      {selectedPhishingEmployee && (
+        <PhishingModal
+          employee={selectedPhishingEmployee}
+          phishingData={phishingData}
+          onClose={closePhishingModal}
+          onGenerate={(emp) => generatePhishing(emp)}
+          token={token}
         />
       )}
     </div>

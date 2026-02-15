@@ -27,6 +27,10 @@ return new class extends Migration {
             $table->string('osint_status')->default('pending'); // pending, completed, failed
             $table->timestamp('osint_last_run')->nullable();
 
+            //Emails
+            $table->longText('phishing_email')->nullable();
+            $table->timestamp('phishing_last_generated')->nullable();
+
             $table->timestamps();
 
             // enforce unique email per organisation

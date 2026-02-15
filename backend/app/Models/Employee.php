@@ -16,7 +16,9 @@ class Employee extends Model
         'osint_raw',
         'osint_ranked',
         'osint_status', 
-        'osint_last_run'
+        'osint_last_run',
+        'phishing_email',
+        'phishing_last_generated'
     ];
 
     public function organisation()

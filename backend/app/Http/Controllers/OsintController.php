@@ -21,11 +21,16 @@ class OsintController extends Controller
         if ($employee->osint_status === 'completed' && $employee->osint_last_run) {
             $lastRun = Carbon::parse($employee->osint_last_run);
             if ($lastRun->gt(now()->subHours(6))) {
+                // Auto-generate phishing if none exists
+                if (empty($employee->phishing_email)) {
+                    $this->generatePhishingForEmployee($employee);
+                }
                 return response()->json([
                     'success' => true,
                     'data' => [
                         'raw_results' => $employee->osint_raw,
                         'ranked' => $employee->osint_ranked,
+                        'phishing_email' => $employee->phishing_email,
                     ]
                 ]);
             }
@@ -61,9 +66,18 @@ class OsintController extends Controller
                 'osint_last_run' => now(),
             ]);
 
+            // Auto-generate phishing if none exists
+            if (empty($employee->fresh()->phishing_email)) {
+                $this->generatePhishingForEmployee($employee);
+            }
+
             return response()->json([
                 'success' => true,
-                'data'    => $data
+                'data'    => [
+                    'raw_results' => $data['raw_results'] ?? null,
+                    'ranked' => $data['ranked'] ?? null,
+                    'phishing_email' => $employee->fresh()->phishing_email,
+                ]
             ]);
 
         } catch (\Exception $e) {
@@ -77,5 +91,63 @@ class OsintController extends Controller
                 'error'   => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function generatePhishing(Request $request)
+    {
+        $request->validate([
+            'employee_id' => 'required|exists:employees,id'
+        ]);
+
+        $employee = Employee::findOrFail($request->employee_id);
+
+        if (empty($employee->osint_raw)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'No OSINT data available. Run OSINT scan first.'
+            ], 400);
+        }
+
+        try {
+            $this->generatePhishingForEmployee($employee);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'phishing_email' => $employee->fresh()->phishing_email,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    private function generatePhishingForEmployee(Employee $employee)
+    {
+        $client = new Client([
+            'timeout' => 120,
+            'connect_timeout' => 30,
+            'verify' => false,  // Disable SSL verification for localhost
+        ]);
+
+        $fullName = trim($employee->first_name . ' ' . $employee->last_name);
+
+        $response = $client->post('http://127.0.0.1:8001/generate_phishing', [
+            'json' => [
+                'full_name' => $fullName,
+                'email' => $employee->email,
+                'osint_data' => $employee->osint_raw,
+            ]
+        ]);
+
+        $data = json_decode($response->getBody(), true);
+
+        $employee->update([
+            'phishing_email' => json_encode($data),
+            'phishing_last_generated' => now(),
+        ]);
     }
 }

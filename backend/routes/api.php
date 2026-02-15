@@ -41,6 +41,7 @@ Route::post('/email/{id}', [EmailController::class, 'generate']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/osint/generate', [OsintController::class, 'generate']);
+    Route::post('/osint/generate-phishing', [OsintController::class, 'generatePhishing']);
 });
 
 

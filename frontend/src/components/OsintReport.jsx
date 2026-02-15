@@ -136,8 +136,8 @@ const OsintReport = ({ employee, token, onClose }) => {
 
           <details className="mt-12 border-t pt-6">
             <summary className="cursor-pointer text-blue-600 font-medium">View Raw OSINT Data</summary>
-            <pre className="mt-4 bg-gray-900 text-gray-300 p-6 rounded-2xl overflow-auto text-xs">
-              {report?.raw_results}
+            <pre className="mt-4 bg-gray-900 text-gray-300 p-6 rounded-2xl overflow-auto text-xs leading-relaxed">
+              {employee.osint_raw || report?.raw_results || "No raw data available."}
             </pre>
           </details>
         </div>
