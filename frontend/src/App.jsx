@@ -6,6 +6,7 @@ import DashboardPage from "./pages/DashboardPage";
 import EmployeesPage from './pages/EmployeesPage';
 
 import Layout from './components/Layout';   // ← Fixed import
+import SettingsPage from './pages/SettingsPage';
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/employees" element={<EmployeesPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
