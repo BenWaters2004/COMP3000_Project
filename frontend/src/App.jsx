@@ -17,9 +17,9 @@ export default function App() {
       }}
     >
       <Routes>
-        <Route path="/" element={<CreateOrganisationPage />} />
-        <Route path="/setup" element={<CreateOrganisationPage />} />
+        <Route path="/" element={<LoginPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/setup" element={<CreateOrganisationPage />} />
 
         {/* Protected routes with sidebar */}
         <Route element={<Layout />}>

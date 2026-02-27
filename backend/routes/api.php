@@ -27,40 +27,29 @@ use App\Http\Controllers\OsintController;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
-
 Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
     return $request->user();
 });
-
+Route::middleware('auth:sanctum')->get('/auth/me', function (Request $request) {
+    return $request->user();
+});
 ##################
 
-Route::post('/scan', [ScanController::class, 'initiate']);
-Route::get('/scan/{id}', [ScanController::class, 'results']);
-Route::post('/email/{id}', [EmailController::class, 'generate']);
-
-
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', function (Request $request) {
+        $request->user()->currentAccessToken()->delete();
+        return response()->json(['message' => 'Logged out successfully']);
+    })->name('logout');
+
     Route::post('/osint/generate', [OsintController::class, 'generate']);
     Route::post('/osint/generate-phishing', [OsintController::class, 'generatePhishing']);
-});
-
-
-Route::post('/organisations', [OrganisationController::class, 'store']);
-Route::middleware('auth:sanctum')->put('/organisations/{organisation}', [OrganisationController::class, 'update']);
-Route::post('/organisations/{organisation}/admin', [OrganisationAdminController::class, 'store']);
-Route::post('/auth/login', [AuthController::class, 'login']);
-
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/auth/me', [AuthController::class, 'me']);
-    Route::post('/auth/logout', [AuthController::class, 'logout']);
 
     Route::post('/organisations/{organisation}/employees/bulk', [EmployeeController::class, 'bulkStore']);
     Route::put('/organisations/{organisation}/settings', [OrganisationSettingsController::class, 'update']);
-
-    
     Route::get('/organisations/{organisation}/employees', [EmployeeController::class, 'index']);
-
-    Route::get('/me', function (Request $request) {
-        return $request->user();
-    });
+    Route::put('/organisations/{organisation}', [OrganisationController::class, 'update']);
 });
+
+Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/organisations', [OrganisationController::class, 'store']);
+Route::post('/organisations/{organisation}/admin', [OrganisationAdminController::class, 'store']);

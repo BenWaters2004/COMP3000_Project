@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreOrganisationRequest;
 use App\Models\Organisation;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
 
 class OrganisationController extends Controller
 {
@@ -36,19 +37,28 @@ class OrganisationController extends Controller
     {
         $user = $request->user();
 
-        if ((int)$user->organisation_id !== (int)$organisation->id) {
+        if (!$user || (int)$user->organisation_id !== (int)$organisation->id) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
-            'website' => ['nullable', 'url', 'max:255'],
-            'industry' => ['nullable', 'string', 'max:120'],
-            'size' => ['nullable', 'string', 'max:30'],
-            // logo optional if you support it here too
+            'website' => ['required', 'url', 'max:255'],
+            'industry' => ['required', 'string', 'max:120'],
+            'size' => ['required', 'string', 'max:30'],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ]);
 
-        $organisation->update($data);
+        $updates = $data;
+
+        if ($request->hasFile('logo')) {
+            if ($organisation->logo_path) {
+                Storage::disk('public')->delete($organisation->logo_path);
+            }
+            $updates['logo_path'] = $request->file('logo')->store('org-logos', 'public');
+        }
+
+        $organisation->update($updates);
 
         return response()->json([
             'message' => 'Organisation updated.',

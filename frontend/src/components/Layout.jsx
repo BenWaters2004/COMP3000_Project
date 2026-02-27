@@ -4,10 +4,10 @@ import { LogOut, Users, Settings, BarChart3 } from 'lucide-react';
 
 const Layout = () => {
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token');
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('auth_token');
     navigate('/login');
   };
 
