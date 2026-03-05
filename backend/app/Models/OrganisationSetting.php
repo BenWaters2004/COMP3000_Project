@@ -13,5 +13,9 @@ class OrganisationSetting extends Model
         'simulation_frequency',
         'timezone',
         'start_at',
+        'primary_color',
+        'enable_mfa',
+        'send_reports',
     ];
+    
 }

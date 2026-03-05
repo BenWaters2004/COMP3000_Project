@@ -2,11 +2,13 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import LoginPage from "./pages/LoginPage";
 import CreateOrganisationPage from './pages/CreateOrganisationPage';
+
 import DashboardPage from "./pages/DashboardPage";
 import EmployeesPage from './pages/EmployeesPage';
-
-import Layout from './components/Layout';   // ← Fixed import
 import SettingsPage from './pages/SettingsPage';
+
+import Layout from './components/Layout';
+import NotFound from './pages/NotFound';
 
 export default function App() {
   return (
@@ -27,6 +29,9 @@ export default function App() {
           <Route path="/employees" element={<EmployeesPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
+
+        {/* Catch-all route for 404 Not Found */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->string('industry')->nullable();
             $table->string('size')->nullable(); // e.g. "1-10", "11-50", etc.
             $table->string('logo_path')->nullable();
+
             $table->timestamps();
 
             $table->index('name');

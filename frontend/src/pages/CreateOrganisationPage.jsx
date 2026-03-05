@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, CheckCircle, Circle } from "lucide-react";
 import { api } from "../lib/api";
 import axios from 'axios';
+
 const STEPS = [
   { key: "org", label: "Organisation" },
   { key: "admin", label: "Admin Account" },
@@ -10,113 +11,7 @@ const STEPS = [
   { key: "frequency", label: "Frequency" },
   { key: "review", label: "Review" },
 ];
-const FREQUENCIES = [
-  { value: "daily", label: "Daily" },
-  { value: "weekly", label: "Weekly" },
-  { value: "biweekly", label: "Every 2 weeks" },
-  { value: "monthly", label: "Monthly" },
-];
-const INDUSTRIES = [
-  { value: "", label: "Select industry" },
-  { value: "Technology", label: "Technology" },
-  { value: "Finance", label: "Finance" },
-  { value: "Healthcare", label: "Healthcare" },
-  { value: "Education", label: "Education" },
-  { value: "Retail", label: "Retail" },
-  { value: "Manufacturing", label: "Manufacturing" },
-  { value: "Other", label: "Other" },
-];
-const SIZES = [
-  { value: "", label: "Select size" },
-  { value: "1-10", label: "1-10" },
-  { value: "11-50", label: "11-50" },
-  { value: "51-200", label: "51-200" },
-  { value: "201-500", label: "201-500" },
-  { value: "501-1000", label: "501-1000" },
-  { value: "1001+", label: "1001+" },
-];
-// Curated IANA timezone list (you can expand later if you want)
-const TIMEZONE_GROUPS = [
-  {
-    group: "United Kingdom & Europe",
-    zones: [
-      { value: "Europe/London", label: "Europe/London (UK)" },
-      { value: "Europe/Dublin", label: "Europe/Dublin (Ireland)" },
-      { value: "Europe/Paris", label: "Europe/Paris" },
-      { value: "Europe/Berlin", label: "Europe/Berlin" },
-      { value: "Europe/Madrid", label: "Europe/Madrid" },
-      { value: "Europe/Rome", label: "Europe/Rome" },
-      { value: "Europe/Amsterdam", label: "Europe/Amsterdam" },
-      { value: "Europe/Stockholm", label: "Europe/Stockholm" },
-      { value: "Europe/Warsaw", label: "Europe/Warsaw" },
-      { value: "Europe/Athens", label: "Europe/Athens" },
-      { value: "Europe/Istanbul", label: "Europe/Istanbul" },
-      { value: "Europe/Moscow", label: "Europe/Moscow" },
-    ],
-  },
-  {
-    group: "North America",
-    zones: [
-      { value: "America/New_York", label: "America/New_York (ET)" },
-      { value: "America/Chicago", label: "America/Chicago (CT)" },
-      { value: "America/Denver", label: "America/Denver (MT)" },
-      { value: "America/Los_Angeles", label: "America/Los_Angeles (PT)" },
-      { value: "America/Phoenix", label: "America/Phoenix" },
-      { value: "America/Toronto", label: "America/Toronto" },
-      { value: "America/Vancouver", label: "America/Vancouver" },
-      { value: "America/Mexico_City", label: "America/Mexico_City" },
-    ],
-  },
-  {
-    group: "South America",
-    zones: [
-      { value: "America/Sao_Paulo", label: "America/Sao_Paulo" },
-      { value: "America/Argentina/Buenos_Aires", label: "America/Argentina/Buenos_Aires" },
-      { value: "America/Santiago", label: "America/Santiago" },
-      { value: "America/Bogota", label: "America/Bogota" },
-    ],
-  },
-  {
-    group: "Africa",
-    zones: [
-      { value: "Africa/Lagos", label: "Africa/Lagos" },
-      { value: "Africa/Johannesburg", label: "Africa/Johannesburg" },
-      { value: "Africa/Nairobi", label: "Africa/Nairobi" },
-      { value: "Africa/Cairo", label: "Africa/Cairo" },
-      { value: "Africa/Casablanca", label: "Africa/Casablanca" },
-    ],
-  },
-  {
-    group: "Asia",
-    zones: [
-      { value: "Asia/Dubai", label: "Asia/Dubai" },
-      { value: "Asia/Riyadh", label: "Asia/Riyadh" },
-      { value: "Asia/Jerusalem", label: "Asia/Jerusalem" },
-      { value: "Asia/Kolkata", label: "Asia/Kolkata (India)" },
-      { value: "Asia/Karachi", label: "Asia/Karachi" },
-      { value: "Asia/Bangkok", label: "Asia/Bangkok" },
-      { value: "Asia/Singapore", label: "Asia/Singapore" },
-      { value: "Asia/Hong_Kong", label: "Asia/Hong_Kong" },
-      { value: "Asia/Shanghai", label: "Asia/Shanghai" },
-      { value: "Asia/Tokyo", label: "Asia/Tokyo" },
-      { value: "Asia/Seoul", label: "Asia/Seoul" },
-    ],
-  },
-  {
-    group: "Oceania",
-    zones: [
-      { value: "Australia/Sydney", label: "Australia/Sydney" },
-      { value: "Australia/Melbourne", label: "Australia/Melbourne" },
-      { value: "Australia/Brisbane", label: "Australia/Brisbane" },
-      { value: "Australia/Perth", label: "Australia/Perth" },
-      { value: "Pacific/Auckland", label: "Pacific/Auckland (NZ)" },
-    ],
-  },
-  {
-    group: "UTC",
-    zones: [{ value: "UTC", label: "UTC" }],
-  },
-];
+
 function isValidUrl(value) {
   if (!value || !value.trim()) return true;
   try {
@@ -156,6 +51,36 @@ export default function OrgSetupWizard() {
   const [submitting, setSubmitting] = useState(false);
   const [globalError, setGlobalError] = useState(null);
   const [orgId, setOrgId] = useState(null);
+
+  // Dynamic dropdown options
+  const [industries, setIndustries] = useState([]);
+  const [sizes, setSizes] = useState([]);
+  const [frequencies, setFrequencies] = useState([]);
+  const [timezoneGroups, setTimezoneGroups] = useState([]);
+
+  // Fetch options on mount
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const [indRes, sizeRes, freqRes, tzRes] = await Promise.all([
+          api.get('/api/settings/industries'),
+          api.get('/api/settings/company-sizes'),
+          api.get('/api/settings/frequencies'),
+          api.get('/api/settings/timezones'),
+        ]);
+
+        setIndustries([{ value: "", label: "Select industry" }, ...indRes.data.map(name => ({ value: name, label: name }))]);
+        setSizes([{ value: "", label: "Select size" }, ...sizeRes.data.map(range => ({ value: range, label: range }))]);
+        setFrequencies(freqRes.data); // already {value, label}
+        setTimezoneGroups(tzRes.data); // already grouped array
+      } catch (err) {
+        console.error("Failed to load dropdown options:", err.response?.data || err.message);
+      }
+    };
+
+    fetchOptions();
+  }, []);
+
   // Step 1: Org
   const [orgForm, setOrgForm] = useState({
     name: "",
@@ -366,14 +291,13 @@ export default function OrgSetupWizard() {
       } else {
         setGlobalError(friendlyApiError(err, "We couldn’t add employees."));
       }
-    } finally {
+    } finally {7
       setSubmitting(false);
       const handleGatherOsint = async (employees) => {
         try {
           const response = await axios.post('/api/osint/gather', employees, {
             headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }, // Tie to your login
           });
-          console.log('OSINT Results:', response.data); // Display in UI, e.g., for training report
         } catch (error) {
           console.error('Error gathering OSINT:', error);
         }
@@ -418,15 +342,26 @@ export default function OrgSetupWizard() {
       setSubmitting(false);
     }
   }
+
   // ---------- Review ----------
   const review = useMemo(() => {
     const employeeCount = employees.filter(
       (e) => e.email.trim() || e.first_name.trim() || e.last_name.trim() || e.job_title.trim() || e.department.trim()
     ).length;
+
+    // Use the fetched timezoneGroups instead of the removed constant
     const tzLabel =
-      TIMEZONE_GROUPS.flatMap((g) => g.zones).find((z) => z.value === settingsForm.timezone)?.label ||
-      settingsForm.timezone;
-    const freqLabel = FREQUENCIES.find((f) => f.value === settingsForm.frequency)?.label || settingsForm.frequency;
+      timezoneGroups
+        .flatMap((g) => g.zones)
+        .find((z) => z.value === settingsForm.timezone)?.label ||
+      settingsForm.timezone ||
+      "Not selected";
+
+    const freqLabel =
+      frequencies.find((f) => f.value === settingsForm.frequency)?.label ||
+      settingsForm.frequency ||
+      "Not selected";
+
     return {
       orgId,
       organisation: {
@@ -447,7 +382,16 @@ export default function OrgSetupWizard() {
         startAt: settingsForm.startAt || "Not set",
       },
     };
-  }, [orgForm, adminForm, employees, settingsForm, orgId]);
+  }, [
+    orgForm,
+    adminForm,
+    employees,
+    settingsForm,
+    orgId,
+    timezoneGroups,
+    frequencies,
+  ]);
+
   async function finishSetup() {
     // No backend "complete" endpoint yet. For now, just redirect to dashboard.
     navigate("/dashboard", { replace: true });
@@ -625,6 +569,25 @@ export default function OrgSetupWizard() {
           font-weight: 600;
           color: #111827;
         }
+        
+        .employee-table input {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          border: 1px solid #d1d5db;
+          border-radius: 0.5rem;
+          font-size: 0.95rem;
+          min-width: 140px;
+        }
+
+        .employee-table td {
+          padding: 0.75rem 1rem;
+          min-width: 160px;
+        }
+
+        .employee-table th {
+          min-width: 140px;
+          padding: 0.75rem 1rem;
+        }
       `}</style>
       <div className="max-w-6xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden flex lg:flex-row flex-col">
         {/* LEFT: White Login Side */}
@@ -644,7 +607,7 @@ export default function OrgSetupWizard() {
             )}
             <div className="space-y-6">
               {currentStep.key === "org" && (
-                <OrgStep form={orgForm} setForm={setOrgForm} errors={orgErrors} submitting={submitting} onContinue={submitOrg} />
+                <OrgStep form={orgForm} setForm={setOrgForm} errors={orgErrors} submitting={submitting} onContinue={submitOrg} industries={industries} sizes={sizes} />
               )}
               {currentStep.key === "admin" && (
                 <AdminStep
@@ -674,6 +637,8 @@ export default function OrgSetupWizard() {
                   errors={settingsErrors}
                   submitting={submitting}
                   onContinue={submitSettings}
+                  frequencies={frequencies}
+                  timezoneGroups={timezoneGroups}
                 />
               )}
               {currentStep.key === "review" && <ReviewStep review={review} onFinish={finishSetup} />}
@@ -739,7 +704,10 @@ function Stepper({ stepIndex }) {
     </div>
   );
 }
-function OrgStep({ form, setForm, errors, submitting, onContinue }) {
+function OrgStep({ form, setForm, errors, submitting, onContinue, industries, sizes, }) {
+
+  // Force it to be an array if somehow undefined
+  const safeIndustries = Array.isArray(industries) ? industries : [];
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-900">Organisation details</h2>
@@ -768,29 +736,40 @@ function OrgStep({ form, setForm, errors, submitting, onContinue }) {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Industry</label>
           <select
-            value={form.industry}
+            value={form.industry || ""}
             onChange={(e) => setForm((s) => ({ ...s, industry: e.target.value }))}
             className="w-full rounded-2xl border border-gray-200 px-5 py-3.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
+            disabled={industries.length === 0}
           >
-            {INDUSTRIES.map((ind) => (
-              <option key={ind.value} value={ind.value}>
-                {ind.label}
-              </option>
-            ))}
+            {safeIndustries.length > 0 ? (
+              safeIndustries.map((ind) => (
+                <option key={ind.value} value={ind.value}>
+                  {ind.label}
+                </option>
+              ))
+            ) : (
+              <option value="">Loading industries...</option>
+            )}
           </select>
         </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Size</label>
           <select
-            value={form.size}
+            value={form.size || ""}
             onChange={(e) => setForm((s) => ({ ...s, size: e.target.value }))}
             className="w-full rounded-2xl border border-gray-200 px-5 py-3.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
+            disabled={sizes.length === 0}
           >
-            {SIZES.map((sz) => (
-              <option key={sz.value} value={sz.value}>
-                {sz.label}
-              </option>
-            ))}
+            {sizes && Array.isArray(sizes) && sizes.length > 0 ? (
+              sizes.map((sz) => (
+                <option key={sz.value} value={sz.value}>
+                  {sz.label}
+                </option>
+              ))
+            ) : (
+              <option value="">Loading sizes...</option>
+            )}
           </select>
         </div>
       </div>
@@ -1014,7 +993,7 @@ function EmployeesStep({ employees, setEmployees, error, submitting, onContinue,
     </div>
   );
 }
-function FrequencyStep({ form, setForm, errors, submitting, onContinue }) {
+function FrequencyStep({ form, setForm, errors, submitting, onContinue, frequencies, timezoneGroups }) {
   return (
     <div className="space-y-6">
       <div>
@@ -1028,12 +1007,12 @@ function FrequencyStep({ form, setForm, errors, submitting, onContinue }) {
           onChange={(e) => setForm((s) => ({ ...s, frequency: e.target.value }))}
           className="w-full rounded-2xl border border-gray-200 px-5 py-3.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
         >
-          {FREQUENCIES.map((f) => (
-            <option key={f.value} value={f.value}>
-              {f.label}
-            </option>
-          ))}
-        </select>
+        {frequencies?.length > 0 ? (
+          frequencies.map(f => <option key={f.value} value={f.value}>{f.label}</option>)
+        ) : (
+          <option value="" disabled>Loading frequencies...</option>
+        )}
+      </select>
         {errors.frequency && <div className="mt-1 text-sm text-red-600">{errors.frequency}</div>}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1044,15 +1023,17 @@ function FrequencyStep({ form, setForm, errors, submitting, onContinue }) {
             onChange={(e) => setForm((s) => ({ ...s, timezone: e.target.value }))}
             className="w-full rounded-2xl border border-gray-200 px-5 py-3.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
           >
-            {TIMEZONE_GROUPS.map((group) => (
-              <optgroup key={group.group} label={group.group}>
-                {group.zones.map((z) => (
-                  <option key={z.value} value={z.value}>
-                    {z.label}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
+            {timezoneGroups.length > 0 ? (
+              timezoneGroups.map(group => (
+                <optgroup key={group.group} label={group.group}>
+                  {group.zones.map(z => (
+                    <option key={z.value} value={z.value}>{z.label}</option>
+                  ))}
+                </optgroup>
+              ))
+            ) : (
+              <option value="">Loading timezones...</option>
+            )}
           </select>
           {errors.timezone && <div className="mt-1 text-sm text-red-600">{errors.timezone}</div>}
         </div>

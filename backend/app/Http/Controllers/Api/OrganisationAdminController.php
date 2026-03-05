@@ -10,39 +10,79 @@ use Illuminate\Support\Facades\Hash;
 
 class OrganisationAdminController extends Controller
 {
+    public function index(Organisation $organisation)
+    {
+        $this->authorizeOrg($organisation);
+        return User::where('organisation_id', $organisation->id)
+            ->select('id', 'name', 'email', 'created_at')
+            ->orderBy('name')
+            ->get();
+    }
+
     public function store(Request $request, Organisation $organisation)
     {
-        // Prevent creating multiple admins during setup (simple prototype rule).
-        $existingAdminCount = User::where('organisation_id', $organisation->id)->count();
-        if ($existingAdminCount > 0) {
-            return response()->json([
-                'message' => 'Admin already exists for this organisation.'
-            ], 409);
-        }
 
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+        $validated = $request->validate([
+            'name'     => ['required', 'string', 'max:120'],
+            'email'    => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            // expects password_confirmation in request
         ]);
 
         $user = User::create([
             'organisation_id' => $organisation->id,
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-            // Optional: 'role' => 'org_admin'
+            'name'            => $validated['name'],
+            'email'           => $validated['email'],
+            'password'        => Hash::make($validated['password']),
         ]);
 
         return response()->json([
-            'message' => 'Organisation admin created successfully.',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'organisation_id' => $user->organisation_id,
-            ],
+            'message' => 'Admin created',
+            'admin'   => $user->only(['id', 'name', 'email']),
         ], 201);
+    }
+
+    public function destroy(Organisation $organisation, User $admin)
+    {
+        $this->authorizeOrg($organisation);
+
+        if ($admin->organisation_id !== $organisation->id) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
+        if ($admin->id === auth()->id()) {
+            return response()->json(['message' => 'Cannot delete yourself'], 403);
+        }
+
+        $admin->delete();
+
+        return response()->json(['message' => 'Admin removed']);
+    }
+
+    public function resetPassword(Organisation $organisation, User $admin)
+    {
+        $this->authorizeOrg($organisation);
+
+        if ($admin->organisation_id !== $organisation->id) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
+        // Prototype: just return token (in production → send real email)
+        $token = Str::random(60);
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $admin->email],
+            ['token' => Hash::make($token), 'created_at' => now()]
+        );
+
+        return response()->json([
+            'message' => 'Password reset link generated (prototype mode)',
+            'token'   => $token, // remove in production
+        ]);
+    }
+
+    private function authorizeOrg(Organisation $org)
+    {
+        if ((int)auth()->user()->organisation_id !== (int)$org->id) {
+            abort(403, 'Forbidden');
+        }
     }
 }

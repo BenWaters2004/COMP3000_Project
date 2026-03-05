@@ -47,9 +47,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/organisations/{organisation}/employees/bulk', [EmployeeController::class, 'bulkStore']);
     Route::put('/organisations/{organisation}/settings', [OrganisationSettingsController::class, 'update']);
     Route::get('/organisations/{organisation}/employees', [EmployeeController::class, 'index']);
-    Route::put('/organisations/{organisation}', [OrganisationController::class, 'update']);
+    Route::patch('/organisations/{organisation}', [OrganisationController::class, 'update']);
+    Route::get('/organisations/{organisation}', [OrganisationController::class, 'show']);
+    
+
+    Route::get('/organisations/{organisation}/admins', [OrganisationAdminController::class, 'index']);
+    Route::post('/organisations/{organisation}/admins', [OrganisationAdminController::class, 'store']);
+    Route::delete('/organisations/{organisation}/admins/{admin}', [OrganisationAdminController::class, 'destroy']);
+    Route::post('/organisations/{organisation}/admins/{admin}/reset-password', [OrganisationAdminController::class, 'resetPassword']);
 });
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/organisations', [OrganisationController::class, 'store']);
 Route::post('/organisations/{organisation}/admin', [OrganisationAdminController::class, 'store']);
+Route::get('/settings/industries', [OrganisationSettingsController::class, 'industries']);
+Route::get('/settings/company-sizes', [OrganisationSettingsController::class, 'companySizes']);
+Route::get('/settings/frequencies', [OrganisationSettingsController::class, 'frequencies']);
+Route::get('/settings/timezones', [OrganisationSettingsController::class, 'timezones']);

@@ -13,6 +13,7 @@ class Organisation extends Model
         'size',
         'logo_path',
     ];
+    
 
     public function users()
     {

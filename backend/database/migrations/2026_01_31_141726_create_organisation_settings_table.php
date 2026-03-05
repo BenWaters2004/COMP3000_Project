@@ -17,6 +17,9 @@ return new class extends Migration {
             $table->string('simulation_frequency', 20)->default('weekly'); // daily/weekly/biweekly/monthly
             $table->string('timezone', 60);
             $table->dateTime('start_at')->nullable();
+            $table->string('primary_color', 7)->default('#3b82f6');
+            $table->boolean('enable_mfa')->default(true);
+            $table->boolean('send_reports')->default(true);
 
             $table->timestamps();
 

@@ -37,19 +37,19 @@ class OrganisationController extends Controller
     {
         $user = $request->user();
 
-        if (!$user || (int)$user->organisation_id !== (int)$organisation->id) {
+        if ((int)$user->organisation_id !== (int)$organisation->id) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'website' => ['required', 'url', 'max:255'],
-            'industry' => ['required', 'string', 'max:120'],
-            'size' => ['required', 'string', 'max:30'],
-            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+        $validated = $request->validate([
+            'name'     => ['required', 'string', 'max:120'],
+            'website'  => ['nullable', 'url', 'max:255'],
+            'industry' => ['nullable', 'string', 'max:120'],
+            'size'     => ['nullable', 'string', 'max:30'],
+            'logo'     => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ]);
 
-        $updates = $data;
+        $updates = $validated;
 
         if ($request->hasFile('logo')) {
             if ($organisation->logo_path) {
@@ -61,8 +61,20 @@ class OrganisationController extends Controller
         $organisation->update($updates);
 
         return response()->json([
-            'message' => 'Organisation updated.',
-            'organisation' => $organisation,
+            'message'      => 'Organisation updated',
+            'organisation' => $organisation->fresh(),
+        ]);
+    }
+
+    public function show(Organisation $organisation)
+    {
+        $user = auth()->user();
+        if ((int)$user->organisation_id !== (int)$organisation->id) {
+            abort(403);
+        }
+
+        return response()->json([
+            'organisation' => $organisation->load('settings'),
         ]);
     }
 }
