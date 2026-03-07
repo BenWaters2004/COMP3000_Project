@@ -45,9 +45,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/osint/generate-phishing', [OsintController::class, 'generatePhishing']);
 
     Route::post('/organisations/{organisation}/employees/bulk', [EmployeeController::class, 'bulkStore']);
-    Route::put('/organisations/{organisation}/settings', [OrganisationSettingsController::class, 'update']);
+    Route::post('/organisations/{organisation}/settings', [OrganisationSettingsController::class, 'update']);
     Route::get('/organisations/{organisation}/employees', [EmployeeController::class, 'index']);
-    Route::patch('/organisations/{organisation}', [OrganisationController::class, 'update']);
+    Route::post('/organisations/{organisation}/update', [OrganisationController::class, 'update']);
     Route::get('/organisations/{organisation}', [OrganisationController::class, 'show']);
     
 

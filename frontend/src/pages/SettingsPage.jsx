@@ -123,7 +123,6 @@ export default function OrganisationSettingsPage() {
       setAdmins(adminsRes.data || []);
 
     } catch (err) {
-      console.error("Load error:", err);
       const msg = err.response?.data?.message || err.message || "Failed to load settings";
       setError(msg);
       if (err.response?.status === 401) navigate("/login");
@@ -155,7 +154,14 @@ export default function OrganisationSettingsPage() {
 
   const handleSave = async () => {
     if (!orgId) {
-      setError("Organisation ID not loaded. Please refresh the page.");
+      setError("Organisation ID not loaded. Please refresh.");
+      setSaving(false);
+      return;
+    }
+
+
+    if (!form.name?.trim()) {
+      setError("Organisation name is required.");
       setSaving(false);
       return;
     }
@@ -164,45 +170,64 @@ export default function OrganisationSettingsPage() {
     setError(null);
     setSuccess(null);
 
-
     try {
+      // PART 1: Organisation update (use POST + _method)
       const fd = new FormData();
-      fd.append("name", form.name.trim());
-      fd.append("website", form.website?.trim() || "");
-      fd.append("industry", form.industry || "");
-      fd.append("size", form.size || "");
-      if (logoFile) fd.append("logo", logoFile);
+      fd.append('_method', 'POST');          // ← this is the key!
+      fd.append('name', form.name.trim());
+      fd.append('website', (form.website || '').trim());
+      fd.append('industry', form.industry || '');
+      fd.append('size', form.size || '');
+      if (logoFile) fd.append('logo', logoFile);
 
-      // Use PATCH (recommended) or PUT with explicit method
-      await api.patch(`/api/organisations/${orgId}`, fd, {
-        headers: { "Content-Type": "multipart/form-data" },
+      await api.post(`/api/organisations/${orgId}/update`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      await api.patch(`/api/organisations/${orgId}/settings`, {
+
+      // ────────────────────────────────────────────────
+      // PART 2: Update settings (pure JSON – no FormData)
+      // ────────────────────────────────────────────────
+      const settingsRes = await api.post(`/api/organisations/${orgId}/settings`, {
         simulation_frequency: form.simulation_frequency,
         timezone: form.timezone,
         primary_color: form.primary_color,
         enable_mfa: form.enable_mfa,
         send_reports: form.send_reports,
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
       setSuccess("Organisation settings saved successfully");
       setLogoFile(null);
-      await loadAllData(); // refresh
+      await loadAllData(); // refresh everything
     } catch (err) {
-      console.error("Save error:", err.response?.data, err.response?.status);
 
       let msg = "Failed to save changes";
 
-      if (err.response?.status === 422) {
-        const errors = err.response.data.errors || {};
-        msg = Object.values(errors)[0]?.[0] || err.response.data.message || msg;
-      } else if (err.response?.data?.message) {
-        msg = err.response.data.message;
-      } else if (err.response?.status === 405) {
-        msg = "Method not allowed – check route configuration";
-      } else if (err.response?.status === 403) {
-        msg = "Forbidden – you may not have permission to edit this organisation";
+      if (err.response) {
+        // HTTP error (422, 403, 405, etc.)
+
+        if (err.response.status === 422) {
+          const errors = err.response.data.errors || {};
+          msg = Object.values(errors)[0]?.[0] || err.response.data.message || msg;
+        } else if (err.response.data?.message) {
+          msg = err.response.data.message;
+        } else if (err.response.status === 405) {
+          msg = "Method not allowed – please check backend routes";
+        } else if (err.response.status === 403) {
+          msg = "Permission denied – you may not own this organisation";
+        } else if (err.response.status === 404) {
+          msg = "Organisation not found – please reload";
+        }
+      } else if (err.request) {
+        // No response received (network error, CORS, timeout)
+        msg = "Network error – cannot reach server. Check connection or backend status.";
+      } else {
+        // Something else (e.g. TypeError)
+        msg = `Unexpected error: ${err.message}`;
       }
 
       setError(msg);
