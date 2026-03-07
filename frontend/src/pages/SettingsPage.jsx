@@ -246,42 +246,109 @@ export default function OrganisationSettingsPage() {
     setAddingAdmin(true);
     setError(null);
 
+    if (!orgId) {
+      setError("Organisation ID not loaded. Please refresh the page.");
+      setAddingAdmin(false);
+      return;
+    }
+
+    // Basic frontend validation (optional but helpful)
+    if (!newAdmin.name.trim() || !newAdmin.email.trim() || !newAdmin.password.trim()) {
+      setError("All fields are required.");
+      setAddingAdmin(false);
+      return;
+    }
+    if (newAdmin.password !== newAdmin.password_confirmation) {
+      setError("Passwords do not match.");
+      setAddingAdmin(false);
+      return;
+    }
+
     try {
-      await api.post(`/api/organisations/${me?.organisation_id}/admins`, {
-        name: newAdmin.name,
-        email: newAdmin.email,
+      const response = await api.post(`/api/organisations/${orgId}/admins`, {
+        name: newAdmin.name.trim(),
+        email: newAdmin.email.trim(),
         password: newAdmin.password,
         password_confirmation: newAdmin.password_confirmation,
       });
 
+      console.log("Admin added response:", response.data);
+
       setNewAdmin({ name: "", email: "", password: "", password_confirmation: "" });
       setSuccess("Admin added successfully");
-      await loadData();
+      await loadAllData(); // refresh admin list
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to add admin");
+      console.error("Add admin error:", err.response?.data, err.response?.status);
+
+      let msg = "Failed to add admin";
+
+      if (err.response) {
+        if (err.response.status === 422) {
+          const errors = err.response.data.errors || {};
+          msg = Object.values(errors)[0]?.[0] || err.response.data.message || msg;
+        } else if (err.response.data?.message) {
+          msg = err.response.data.message;
+        } else if (err.response.status === 409) {
+          msg = "Admin already exists or conflict.";
+        } else if (err.response.status === 403) {
+          msg = "Permission denied – you may not add admins to this organisation.";
+        } else if (err.response.status === 404) {
+          msg = "Organisation not found – please reload.";
+        }
+      } else if (err.request) {
+        msg = "Network error – cannot reach server.";
+      } else {
+        msg = `Unexpected error: ${err.message}`;
+      }
+
+      setError(msg);
     } finally {
       setAddingAdmin(false);
     }
   };
 
   const handleDeleteAdmin = async (adminId) => {
-    if (!window.confirm("Remove this admin?")) return;
+    if (!window.confirm("Remove this admin? This cannot be undone.")) return;
+
+    if (!orgId) {
+      setError("Organisation ID missing.");
+      return;
+    }
 
     try {
-      await api.delete(`/api/organisations/${me?.organisation_id}/admins/${adminId}`);
+      await api.delete(`/api/organisations/${orgId}/admins/${adminId}`);
       setSuccess("Admin removed");
       setAdmins(prev => prev.filter(a => a.id !== adminId));
     } catch (err) {
-      setError("Failed to remove admin");
+      console.error("Delete admin error:", err.response);
+      let msg = "Failed to remove admin";
+
+      if (err.response?.status === 403) msg = "Cannot delete yourself or permission denied.";
+      else if (err.response?.status === 404) msg = "Admin or organisation not found.";
+      else if (err.response?.data?.message) msg = err.response.data.message;
+
+      setError(msg);
     }
   };
 
   const handleResetPassword = async (adminId) => {
+    if (!orgId) {
+      setError("Organisation ID missing.");
+      return;
+    }
+
     try {
-      await api.post(`/api/organisations/${me?.organisation_id}/admins/${adminId}/reset-password`);
-      setSuccess("Password reset link sent");
+      const res = await api.post(`/api/organisations/${orgId}/admins/${adminId}/reset-password`);
+      console.log("Reset response:", res.data);
+      setSuccess("Password reset link sent (check console for prototype token)");
     } catch (err) {
-      setError("Failed to send reset link");
+      console.error("Reset error:", err.response);
+      let msg = "Failed to send reset link";
+
+      if (err.response?.status === 404) msg = "Admin or organisation not found.";
+      else if (err.response?.data?.message) msg = err.response.data.message;
+
+      setError(msg);
     }
   };
 
