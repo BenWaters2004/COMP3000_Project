@@ -20,9 +20,30 @@ llm = ChatOpenAI(model="gpt-4o", temperature=0.3)
 
 def run_theharvester(domain: str) -> str:
     try:
-        cmd = ["python", "theHarvester.py", "-d", domain, "-l", "300", "-b", "duckduckgo,yahoo,crtsh,dnsdumpster,hackertarget,otx,linkedin"]
-        result = subprocess.run(cmd, cwd="/home/ben/COMP3000/agent/theHarvester", capture_output=True, text=True, timeout=180)
-        return result.stdout.strip() or "No domain data found."
+        THEHARVESTER_DIR = "/COMP3000_Project/agent/theHarvester"  # double-check case sensitivity!
+        cmd = [
+            "uv",
+            "run",
+            "--directory", THEHARVESTER_DIR,
+            "theHarvester.py",
+            "-d", domain,
+            "-l", "300",
+            "-b", "duckduckgo,yahoo,crtsh,dnsdumpster,hackertarget,otx,linkedin"
+        ]
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=180,
+            # cwd=THEHARVESTER_DIR   # optional, but --directory already handles it
+        )
+        output = result.stdout.strip()
+        error = result.stderr.strip()
+        if result.returncode != 0:
+            return f"TheHarvester failed (code {result.returncode}):\n{error or 'No stderr'}"
+        return output or "No domain data found."
+    except FileNotFoundError:
+        return "TheHarvester error: 'uv' command not found. Install uv globally."
     except Exception as e:
         return f"TheHarvester error: {str(e)}"
 
