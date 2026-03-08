@@ -105,4 +105,75 @@ class EmployeeController extends Controller
         ]);
     }
 
+    public function store(Request $request, Organisation $organisation)
+    {
+        $user = $request->user();
+
+        if ((int)$user->organisation_id !== (int)$organisation->id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $validated = $request->validate([
+            'first_name'   => ['required', 'string', 'max:80'],
+            'last_name'    => ['required', 'string', 'max:80'],
+            'email'        => ['required', 'email', 'max:255', 'unique:employees,email,NULL,id,organisation_id,' . $organisation->id],
+            'job_title'    => ['nullable', 'string', 'max:120'],
+            'department'   => ['nullable', 'string', 'max:120'],
+        ]);
+
+        $employee = Employee::create([
+            'organisation_id' => $organisation->id,
+            'first_name'      => trim($validated['first_name']),
+            'last_name'       => trim($validated['last_name']),
+            'email'           => strtolower(trim($validated['email'])),
+            'job_title'       => trim($validated['job_title'] ?? null),
+            'department'      => trim($validated['department'] ?? null),
+        ]);
+
+        return response()->json([
+            'message'   => 'Employee added successfully',
+            'employee'  => $employee
+        ], 201);
+    }
+
+    public function destroy(Request $request, Employee $employee)
+    {
+        $user = $request->user();
+
+        // Only allow deletion if the employee belongs to the user's organisation
+        if ((int)$user->organisation_id !== (int)$employee->organisation_id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $employee->delete();
+
+        return response()->json([
+            'message' => 'Employee deleted successfully'
+        ]);
+    }
+
+    public function update(Request $request, Employee $employee)
+    {
+        $user = $request->user();
+
+        // Only allow update if employee belongs to user's organisation
+        if ((int)$user->organisation_id !== (int)$employee->organisation_id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $validated = $request->validate([
+            'first_name'   => ['sometimes', 'required', 'string', 'max:80'],
+            'last_name'    => ['sometimes', 'required', 'string', 'max:80'],
+            'email'        => ['sometimes', 'required', 'email', 'max:255', 'unique:employees,email,' . $employee->id . ',id,organisation_id,' . $employee->organisation_id],
+            'job_title'    => ['nullable', 'string', 'max:120'],
+            'department'   => ['nullable', 'string', 'max:120'],
+        ]);
+
+        $employee->update($validated);
+
+        return response()->json([
+            'message'   => 'Employee updated successfully',
+            'employee'  => $employee->fresh()
+        ]);
+    }
 }

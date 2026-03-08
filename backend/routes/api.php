@@ -47,6 +47,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/organisations/{organisation}/employees/bulk', [EmployeeController::class, 'bulkStore']);
     Route::post('/organisations/{organisation}/settings', [OrganisationSettingsController::class, 'update']);
     Route::get('/organisations/{organisation}/employees', [EmployeeController::class, 'index']);
+    Route::post('/organisations/{organisation}/employees', [EmployeeController::class, 'store']);
+    Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy']);
+    Route::patch('/employees/{employee}', [EmployeeController::class, 'update']);
     Route::post('/organisations/{organisation}/update', [OrganisationController::class, 'update']);
     Route::get('/organisations/{organisation}', [OrganisationController::class, 'show']);
     

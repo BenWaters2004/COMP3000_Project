@@ -73,31 +73,39 @@ const Layout = () => {
           ${sidebarWidth}
         `}
       >
-        {/* Logo area */}
-        <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between relative">
-          <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center w-full' : ''}`}>
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
-              <span className="text-white text-2xl font-bold">A</span>
-            </div>
-            {textVisible && (
-              <div className="min-w-0">
-                <h1 className="text-2xl font-bold">AIDEN</h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1">Security Awareness</p>
+        {/* Logo / Header area */}
+        <div className="p-5 border-b border-gray-100 dark:border-gray-800 relative">
+          <div className={`flex flex-col ${isCollapsed ? 'gap-4' : 'gap-3'}`}>
+            {/* Logo */}
+            <div className={`flex items-center ${isCollapsed ? 'justify-center w-full' : 'gap-3'}`}>
+              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                <span className="text-white text-2xl font-bold">A</span>
               </div>
-            )}
-          </div>
+              {textVisible && (
+                <div className="min-w-0">
+                  <h1 className="text-2xl font-bold">AIDEN</h1>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1">Security Awareness</p>
+                </div>
+              )}
+            </div>
 
-          <button
-            onClick={toggleCollapse}
-            className={`
-              p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400
-              transition hidden lg:block
-              ${isCollapsed ? 'absolute right-3 top-5' : ''}
-            `}
-            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-          </button>
+            {/* Collapse/Expand button */}
+            <button
+              onClick={toggleCollapse}
+              className={`
+                hidden lg:flex items-center justify-center
+                ${isCollapsed 
+                  ? 'w-10 h-10 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all duration-200 scale-100 hover:scale-110 z-10 hover:ring-2 hover:ring-blue-400/30 dark:hover:ring-blue-500/30' 
+                  : 'p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition'
+                }
+                ${isCollapsed ? 'mt-2' : 'absolute right-5 top-5'}
+              `}
+              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile close button */}
