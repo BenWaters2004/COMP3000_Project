@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { api } from "../lib/api";
 
+// Utility function to validate email format
 function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
 }
@@ -17,7 +18,7 @@ export default function LoginPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    e.stopPropagation(); // Additional safeguard
+    e.stopPropagation();
 
     // Always clear errors first for a clean state
     setError(null);
@@ -35,15 +36,14 @@ export default function LoginPage() {
 
     setSubmitting(true);
 
+    // API call to authenticate user and handle login
     api.post("/api/auth/login", {
       email: form.email.trim(),
       password: form.password,
     }, {
-      skipAuthRedirect: true // Add this config to prevent interceptor redirect on 401
+      skipAuthRedirect: true
     })
       .then((res) => {
-
-        // Handle non-200 status or missing token (invalid creds)
         if (res.status !== 200 || !res.data?.token) {
           const errorMsg = "Incorrect email or password.";
           setError(errorMsg);
@@ -53,8 +53,6 @@ export default function LoginPage() {
         localStorage.setItem("auth_token", res.data.token);
 
         return api.get("/api/auth/me").then((meRes) => {
-
-          // Handle non-200 status for session verification
           if (meRes.status !== 200) {
             const errorMsg = "Login failed. Please try again.";
             setError(errorMsg);
@@ -81,10 +79,11 @@ export default function LoginPage() {
   };
 
   return (
+    // Main container for the login page with background and centered form
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <style jsx>{`
         :root {
-          /* Neural Network Animation Vars (Pure CSS AI effect) */
+          /* Neural Network Animation Vars */
           --inputX: 0.9;
           --inputY: -1;
           --output1bias: 0.006412765611663633;
@@ -260,7 +259,7 @@ export default function LoginPage() {
         <div className="flex-1 relative bg-gradient-to-br from-blue-200 via-purple-200 to-indigo-200 lg:min-h-[600px]">
           {/* Neural Network Background Animation */}
           <div className="neural-bg">
-            {/* Simulated nodes (glowing dots) */}
+            {/* glowing dots */}
             <div className="neural-node"></div>
             <div className="neural-node"></div>
             <div className="neural-node"></div>

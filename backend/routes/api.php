@@ -23,7 +23,7 @@ use App\Http\Controllers\OsintController;
 |
 */
 
-################
+# Default route to get authenticated user info
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
@@ -35,15 +35,19 @@ Route::middleware('auth:sanctum')->get('/auth/me', function (Request $request) {
 });
 ##################
 
+# Authenticated routes
 Route::middleware('auth:sanctum')->group(function () {
+    # Logout route
     Route::post('/logout', function (Request $request) {
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Logged out successfully']);
     })->name('logout');
 
+    # Generate email content based on OSINT data for a scan request
     Route::post('/osint/generate', [OsintController::class, 'generate']);
     Route::post('/osint/generate-phishing', [OsintController::class, 'generatePhishing']);
 
+    # Organisation management routes
     Route::post('/organisations/{organisation}/employees/bulk', [EmployeeController::class, 'bulkStore']);
     Route::post('/organisations/{organisation}/settings', [OrganisationSettingsController::class, 'update']);
     Route::get('/organisations/{organisation}/employees', [EmployeeController::class, 'index']);
@@ -53,13 +57,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/organisations/{organisation}/update', [OrganisationController::class, 'update']);
     Route::get('/organisations/{organisation}', [OrganisationController::class, 'show']);
     
-
+    # Organisation admin management routes
     Route::get('/organisations/{organisation}/admins', [OrganisationAdminController::class, 'index']);
     Route::post('/organisations/{organisation}/admins', [OrganisationAdminController::class, 'store']);
     Route::delete('/organisations/{organisation}/admins/{admin}', [OrganisationAdminController::class, 'destroy']);
     Route::post('/organisations/{organisation}/admins/{admin}/reset-password', [OrganisationAdminController::class, 'resetPassword']);
 });
 
+# Public routes
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/organisations', [OrganisationController::class, 'store']);
 Route::post('/organisations/{organisation}/admin', [OrganisationAdminController::class, 'store']);

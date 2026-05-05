@@ -10,6 +10,7 @@ import {
   Eye, Trash2, Edit, Shield, Send, Download
 } from "lucide-react";
 
+// Page component for managing employees, running OSINT and phishing simulations, and viewing reports
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState([]);
   const [search, setSearch] = useState("");
@@ -37,6 +38,7 @@ export default function EmployeesPage() {
   }, []);
 
   const loadData = async () => {
+    // Load user and employee data for the dashboard
     setLoading(true);
     setError(null);
 
@@ -60,6 +62,7 @@ export default function EmployeesPage() {
     }
   };
 
+  // Function to run OSINT simulation for an employee and display the report
   const runOsint = async (employee) => {
     setSelectedEmployee(employee);
     setReport(null);
@@ -71,21 +74,21 @@ export default function EmployeesPage() {
     }
   };
 
+  // Functions to handle opening/closing modals and performing actions like generating phishing emails, editing, and deleting employees
   const openPhishingModal = (employee) => {
     setSelectedPhishingEmployee(employee);
     setPhishingData(null);
   };
-
   const closePhishingModal = () => {
     setSelectedPhishingEmployee(null);
     setPhishingData(null);
   };
-
   const openEditModal = (employee) => {
     setEditingEmployee(employee);
     setShowEditModal(true);
   };
 
+  // Function to generate a new phishing email simulation for the employee
   const generatePhishing = async (employee) => {
     try {
       const res = await api.post('/api/osint/generate-phishing', { employee_id: employee.id });
@@ -96,6 +99,7 @@ export default function EmployeesPage() {
     }
   };
 
+  // Function to delete an employee with confirmation and error handling
   const deleteEmployee = async (id) => {
     if (!window.confirm("Delete this employee permanently? This cannot be undone.")) return;
 
@@ -209,6 +213,7 @@ export default function EmployeesPage() {
   };
 
   return (
+    // Main container for the Employees page with header, filters, messages, and employee table
     <div className="bg-gray-50 dark:bg-gray-950 p-6 md:p-8 transition-colors duration-300">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-6">

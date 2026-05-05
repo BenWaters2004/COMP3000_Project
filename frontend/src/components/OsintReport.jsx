@@ -4,6 +4,7 @@ import { api } from "../lib/api";
 import axios from 'axios';
 import jsPDF from 'jspdf';
 
+// Component to display the OSINT report for a specific employee, including scores, key findings, recommendations, and raw data
 const OsintReport = ({ employee, token, onClose }) => {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -18,7 +19,7 @@ const OsintReport = ({ employee, token, onClose }) => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // 1. Load OSINT report
+        // Load OSINT report
         if (employee.osint_ranked) {
           let rankedStr = employee.osint_ranked
             .replace(/```json\s*/g, '')
@@ -38,7 +39,7 @@ const OsintReport = ({ employee, token, onClose }) => {
           setReport(res.data.data);
         }
 
-        // 2. Load organisation data for branding (logo + color)
+        // Load organisation data for branding
         if (employee.organisation_id) {
           const orgRes = await api.get(`/api/organisations/${employee.organisation_id}`);
           setOrgData(orgRes.data.organisation || orgRes.data);
@@ -53,6 +54,7 @@ const OsintReport = ({ employee, token, onClose }) => {
     loadData();
   }, [employee.id, employee.osint_ranked, employee.organisation_id]);
 
+  // Function to copy raw OSINT data to clipboard
   const copyRawData = () => {
     const rawText = employee.osint_raw || report?.raw_results || "No raw data available.";
     navigator.clipboard.writeText(rawText).then(() => {
@@ -63,6 +65,7 @@ const OsintReport = ({ employee, token, onClose }) => {
     });
   };
 
+  // Function to export the report as a PDF
   const exportToPDF = async () => {
     if (exporting || !report) return;
     setExporting(true);
@@ -85,7 +88,7 @@ const OsintReport = ({ employee, token, onClose }) => {
     if (logoUrl) {
       try {
         const img = await loadImage(logoUrl);
-        doc.addImage(img, 'PNG', 20, headerY - 5, 35, 35); // slightly larger, centered vertically
+        doc.addImage(img, 'PNG', 20, headerY - 5, 35, 35);
         headerY += 40;
       } catch (e) {
         console.warn("Failed to load logo for PDF", e);
@@ -167,7 +170,7 @@ const OsintReport = ({ employee, token, onClose }) => {
 
     doc.setFontSize(11);
     (report?.ranked?.training_recommendations || []).forEach(item => {
-      const lines = doc.splitTextToSize(`- ${item}`, 160);  // Changed to - for better font rendering
+      const lines = doc.splitTextToSize(`- ${item}`, 160);
       doc.text(lines, 25, y);
       y += lines.length * 6 + 2;
       if (y > 270) {
@@ -187,10 +190,10 @@ const OsintReport = ({ employee, token, onClose }) => {
     const rawText = employee.osint_raw || report?.raw_results || "No raw data available.";
     const rawLines = doc.splitTextToSize(rawText, 170);
 
-    // Explicitly loop through raw lines to handle multi-page
+    // loop through raw lines to handle multi-page
     rawLines.forEach(line => {
       doc.text(line, 20, y);
-      y += 5; // Line height for font size 10
+      y += 5; // Line height
       if (y > 270) {
         doc.addPage();
         y = 20;
@@ -213,7 +216,7 @@ const OsintReport = ({ employee, token, onClose }) => {
     setExporting(false);
   };
 
-  // Helper: Convert hex to RGB array for jsPDF
+  // Convert hex to RGB array for jsPDF
   const hexToRgb = (hex) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? [
@@ -223,7 +226,7 @@ const OsintReport = ({ employee, token, onClose }) => {
     ] : [59, 130, 246]; // fallback blue-500
   };
 
-  // Helper: Load image for PDF (needed for logo)
+  // Load image for PDF
   const loadImage = (url) => {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -235,6 +238,7 @@ const OsintReport = ({ employee, token, onClose }) => {
   };
 
   if (loading) {
+    // Show loading state while fetching report
     return (
       <div className="fixed inset-0 bg-black/70 dark:bg-black/80 flex items-center justify-center z-50 p-4 transition-colors duration-300">
         <div className="bg-white dark:bg-gray-800 rounded-3xl p-10 md:p-12 flex flex-col items-center max-w-sm w-full text-center shadow-2xl">
@@ -251,6 +255,7 @@ const OsintReport = ({ employee, token, onClose }) => {
   }
 
   if (error) {
+    // Show error state if report failed to load
     return (
       <div className="fixed inset-0 bg-black/70 dark:bg-black/80 flex items-center justify-center z-50 p-6 transition-colors duration-300">
         <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 md:p-10 max-w-md w-full text-center shadow-2xl border border-red-200 dark:border-red-800">
@@ -275,6 +280,7 @@ const OsintReport = ({ employee, token, onClose }) => {
   const ranked = report?.ranked || {};
 
   return (
+    // Main modal container
     <div className="fixed inset-0 bg-black/70 dark:bg-black/80 flex items-center justify-center z-50 p-4 md:p-6 transition-colors duration-300">
       <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-5xl max-h-[95vh] overflow-hidden shadow-2xl flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}

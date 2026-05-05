@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('simulation_frequencies', function (Blueprint $table) {
             $table->id();
-            $table->string('value')->unique(); // "daily", "weekly", etc.
+            $table->string('value')->unique(); // daily, weekly, etc.
             $table->string('label');
             $table->timestamps();
         });

@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->string('name');
             $table->string('website')->nullable();
             $table->string('industry')->nullable();
-            $table->string('size')->nullable(); // e.g. "1-10", "11-50", etc.
+            $table->string('size')->nullable(); // eg 1-10, 11-50
             $table->string('logo_path')->nullable();
 
             $table->timestamps();

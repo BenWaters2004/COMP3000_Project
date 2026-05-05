@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 
 class OrganisationAdminController extends Controller
 {
+    # List all admins for an organisation
     public function index(Organisation $organisation)
     {
         $this->authorizeOrg($organisation);
@@ -19,6 +20,7 @@ class OrganisationAdminController extends Controller
             ->get();
     }
 
+    # Add a new admin to the organisation
     public function store(Request $request, Organisation $organisation)
     {
 
@@ -41,6 +43,7 @@ class OrganisationAdminController extends Controller
         ], 201);
     }
 
+    # Delete an admin from the organisation
     public function destroy(Organisation $organisation, User $admin)
     {
         $this->authorizeOrg($organisation);
@@ -58,27 +61,7 @@ class OrganisationAdminController extends Controller
         return response()->json(['message' => 'Admin removed']);
     }
 
-    public function resetPassword(Organisation $organisation, User $admin)
-    {
-        $this->authorizeOrg($organisation);
-
-        if ($admin->organisation_id !== $organisation->id) {
-            return response()->json(['message' => 'Not found'], 404);
-        }
-
-        // Prototype: just return token (in production → send real email)
-        $token = Str::random(60);
-        DB::table('password_reset_tokens')->updateOrInsert(
-            ['email' => $admin->email],
-            ['token' => Hash::make($token), 'created_at' => now()]
-        );
-
-        return response()->json([
-            'message' => 'Password reset link generated (prototype mode)',
-            'token'   => $token, // remove in production
-        ]);
-    }
-
+    # Helper to check if the authenticated user belongs to the organisation
     private function authorizeOrg(Organisation $org)
     {
         if ((int)auth()->user()->organisation_id !== (int)$org->id) {

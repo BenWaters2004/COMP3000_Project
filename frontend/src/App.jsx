@@ -11,6 +11,7 @@ import Layout from './components/Layout';
 import NotFound from './pages/NotFound';
 
 export default function App() {
+  // Main application component that sets up routing and layout
   return (
     <BrowserRouter
       future={{
@@ -19,6 +20,7 @@ export default function App() {
       }}
     >
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<LoginPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/setup" element={<CreateOrganisationPage />} />

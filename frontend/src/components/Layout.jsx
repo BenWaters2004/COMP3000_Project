@@ -6,6 +6,7 @@ import {
   Sun, Moon 
 } from 'lucide-react';
 
+// Main layout component that wraps around all pages, providing a consistent sidebar and header
 const Layout = () => {
   const navigate = useNavigate();
 
@@ -42,7 +43,7 @@ const Layout = () => {
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('sidebarCollapsed');
-    localStorage.removeItem('darkMode'); // optional
+    localStorage.removeItem('darkMode');
     navigate('/login');
   };
 

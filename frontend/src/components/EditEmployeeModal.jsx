@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Save, AlertCircle, Edit } from "lucide-react";
 
+// Modal component for editing an existing employee's details in the organisation
 export default function EditEmployeeModal({ employee, orgId, onClose, onSuccess, api }) {
   const [form, setForm] = useState({
     first_name: "",
@@ -43,6 +44,7 @@ export default function EditEmployeeModal({ employee, orgId, onClose, onSuccess,
     }
 
     try {
+      // API call to update employee details
       const response = await api.patch(`/api/employees/${employee.id}`, {
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
@@ -56,6 +58,7 @@ export default function EditEmployeeModal({ employee, orgId, onClose, onSuccess,
       onSuccess(response.data.employee); // Pass updated employee if needed
       onClose();
     } catch (err) {
+      // Log the error details for debugging
       console.error("Edit error:", err.response?.data, err.response?.status);
 
       let msg = "Failed to update employee";

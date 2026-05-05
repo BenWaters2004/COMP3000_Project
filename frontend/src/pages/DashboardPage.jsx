@@ -15,6 +15,7 @@ import {
 import { Bar } from "react-chartjs-2";
 import { Users, Shield, AlertTriangle, TrendingUp, Loader2 } from "lucide-react";
 
+// Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend);
 
 export default function DashboardPage() {
@@ -28,6 +29,7 @@ export default function DashboardPage() {
     loadData();
   }, []);
 
+  // Function to load user and employee data for the dashboard
   const loadData = async () => {
     setLoading(true);
     setError(null);
@@ -86,7 +88,7 @@ export default function DashboardPage() {
     return reverseMap[rounded] || "Medium";
   }, [employees]);
 
-  // Department chart data (dark mode aware)
+  // Department chart data
   const deptChartData = useMemo(() => {
     const map = {};
     employees.forEach(e => {
@@ -104,13 +106,14 @@ export default function DashboardPage() {
       datasets: [{
         label: "Employees",
         data: entries.map(d => d.value),
-        backgroundColor: "#3b82f6", // blue-500
-        borderColor: "#2563eb",     // blue-600
+        backgroundColor: "#3b82f6", 
+        borderColor: "#2563eb", 
         borderWidth: 1,
       }]
     };
   }, [employees]);
 
+  // Chart options with consistent styling
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -121,8 +124,8 @@ export default function DashboardPage() {
     scales: {
       y: {
         beginAtZero: true,
-        grid: { color: "rgba(107, 114, 128, 0.2)" }, // gray-500/20
-        ticks: { color: "#6b7280" } // gray-500
+        grid: { color: "rgba(107, 114, 128, 0.2)" },
+        ticks: { color: "#6b7280" }
       },
       x: {
         grid: { display: false },
@@ -132,6 +135,7 @@ export default function DashboardPage() {
   };
 
   if (loading) {
+    // Show loading state while fetching data
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-8">
         <div className="flex flex-col items-center gap-4">
@@ -143,6 +147,7 @@ export default function DashboardPage() {
   }
 
   return (
+    // Main dashboard container with header, stats cards, and charts
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6 md:p-8 transition-colors duration-300">
       <div className="max-w-screen-2xl mx-auto">
         {/* Header */}

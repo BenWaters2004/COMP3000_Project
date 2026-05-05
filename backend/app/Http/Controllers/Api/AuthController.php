@@ -18,12 +18,11 @@ class AuthController extends Controller
 
         $user = User::where('email', $data['email'])->first();
 
+        # Check if user exists and password is correct
         if (!$user || !Hash::check($data['password'], $user->password)) {
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
-        // Optional: only allow org admins (if you add role later)
-        // if ($user->role !== 'org_admin') return response()->json(['message' => 'Forbidden'], 403);
 
         $token = $user->createToken('org-admin')->plainTextToken;
 

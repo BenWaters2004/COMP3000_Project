@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('company_sizes', function (Blueprint $table) {
             $table->id();
-            $table->string('ranges')->unique(); // e.g. "1-10", "11-50"
+            $table->string('ranges')->unique(); // eg 1-10, 11-50
             $table->timestamps();
         });
     }

@@ -4,6 +4,7 @@ import { Eye, EyeOff, CheckCircle, Circle } from "lucide-react";
 import { api } from "../lib/api";
 import axios from 'axios';
 
+// Multi-step wizard component for creating a new organisation, admin account, adding employees, and setting simulation frequency
 const STEPS = [
   { key: "org", label: "Organisation" },
   { key: "admin", label: "Admin Account" },
@@ -12,6 +13,7 @@ const STEPS = [
   { key: "review", label: "Review" },
 ];
 
+// Utility functions for validation and error handling
 function isValidUrl(value) {
   if (!value || !value.trim()) return true;
   try {
@@ -22,9 +24,10 @@ function isValidUrl(value) {
   }
 }
 function isValidEmail(value) {
-  // Simple & reliable enough for UI validation
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
 }
+
+// Friendly error messages based on API response
 function friendlyApiError(err, fallback = "Something went wrong. Please try again.") {
   const status = err?.response?.status;
   const data = err?.response?.data;
@@ -45,6 +48,8 @@ function map422Errors(err) {
   }
   return null;
 }
+
+// Main component
 export default function OrgSetupWizard() {
   const navigate = useNavigate();
   const [stepIndex, setStepIndex] = useState(0);
@@ -58,7 +63,7 @@ export default function OrgSetupWizard() {
   const [frequencies, setFrequencies] = useState([]);
   const [timezoneGroups, setTimezoneGroups] = useState([]);
 
-  // Fetch options on mount
+  // Fetch options for industries, company sizes, frequencies, and timezones on mount
   useEffect(() => {
     const fetchOptions = async () => {
       try {
@@ -71,8 +76,8 @@ export default function OrgSetupWizard() {
 
         setIndustries([{ value: "", label: "Select industry" }, ...indRes.data.map(name => ({ value: name, label: name }))]);
         setSizes([{ value: "", label: "Select size" }, ...sizeRes.data.map(range => ({ value: range, label: range }))]);
-        setFrequencies(freqRes.data); // already {value, label}
-        setTimezoneGroups(tzRes.data); // already grouped array
+        setFrequencies(freqRes.data);
+        setTimezoneGroups(tzRes.data);
       } catch (err) {
         console.error("Failed to load dropdown options:", err.response?.data || err.message);
       }
@@ -90,6 +95,7 @@ export default function OrgSetupWizard() {
     logo: null,
   });
   const [orgErrors, setOrgErrors] = useState({});
+
   // Step 2: Admin account
   const [adminForm, setAdminForm] = useState({
     name: "",
@@ -99,11 +105,13 @@ export default function OrgSetupWizard() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [adminErrors, setAdminErrors] = useState({});
+
   // Step 3: Employees
   const [employees, setEmployees] = useState([
     { first_name: "", last_name: "", email: "", job_title: "", department: "" },
   ]);
-  const [employeeErrors, setEmployeeErrors] = useState(null); // string or array
+  const [employeeErrors, setEmployeeErrors] = useState(null);
+
   // Step 4: Frequency
   const [settingsForm, setSettingsForm] = useState({
     frequency: "weekly",
@@ -116,8 +124,10 @@ export default function OrgSetupWizard() {
     setGlobalError(null);
     setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
   }
+
   // ---------- Step 1 ----------
   function validateOrg(f) {
+    // Basic validation for organisation details
     const e = {};
     if (!f.name.trim()) e.name = "Please enter your organisation name.";
     if (f.name.trim().length > 120) e.name = "Organisation name must be 120 characters or fewer.";
@@ -126,6 +136,7 @@ export default function OrgSetupWizard() {
     return e;
   }
   async function submitOrg() {
+    // Prevent multiple submissions
     if (submitting) return;
     const e = validateOrg(orgForm);
     setOrgErrors(e);
@@ -133,6 +144,7 @@ export default function OrgSetupWizard() {
     setSubmitting(true);
     setGlobalError(null);
     try {
+      // Create or update organisation with form data, including file upload for logo
       const fd = new FormData();
       fd.append("name", orgForm.name.trim());
       fd.append("website", orgForm.website.trim());
@@ -141,7 +153,7 @@ export default function OrgSetupWizard() {
       if (orgForm.logo) fd.append("logo", orgForm.logo);
       let res;
       if (orgId) {
-        fd.append("_method", "PUT");
+        fd.append("_method", "POST");
         res = await api.post(`/api/organisations/${orgId}`, fd, {
           headers: { "Content-Type": "multipart/form-data" },
         });
@@ -173,8 +185,10 @@ export default function OrgSetupWizard() {
       setSubmitting(false);
     }
   }
+
   // ---------- Step 2 ----------
   function validateAdmin(f) {
+    // Basic validation for admin account details
     const e = {};
     if (!f.name.trim()) e.name = "Please enter the admin name.";
     if (!f.email.trim()) e.email = "Please enter an email address.";
@@ -186,6 +200,7 @@ export default function OrgSetupWizard() {
     return e;
   }
   async function submitAdmin() {
+    // Prevent multiple submissions
     if (submitting) return;
     const e = validateAdmin(adminForm);
     setAdminErrors(e);
@@ -197,14 +212,14 @@ export default function OrgSetupWizard() {
     setSubmitting(true);
     setGlobalError(null);
     try {
-      // 1) Create admin user for this org
+      // Create admin user for this org
       await api.post(`/api/organisations/${orgId}/admin`, {
         name: adminForm.name.trim(),
         email: adminForm.email.trim(),
         password: adminForm.password,
         password_confirmation: adminForm.password_confirm,
       });
-      // 2) Auto-login (token auth)
+      // Auto-login (token auth)
       const loginRes = await api.post("/api/auth/login", {
         email: adminForm.email.trim(),
         password: adminForm.password,
@@ -214,8 +229,6 @@ export default function OrgSetupWizard() {
     } catch (err) {
       const fieldErrors = map422Errors(err);
       if (fieldErrors) {
-        // Common mismatch: Laravel uses "password" + "password_confirmation"
-        // We show it nicely under confirm as well if needed
         const mapped = { ...fieldErrors };
         if (mapped.password_confirmation) mapped.password_confirm = mapped.password_confirmation;
         setAdminErrors(mapped);
@@ -226,6 +239,7 @@ export default function OrgSetupWizard() {
       setSubmitting(false);
     }
   }
+
   // ---------- Step 3 ----------
   function validateEmployees(list) {
     const issues = [];
@@ -242,6 +256,7 @@ export default function OrgSetupWizard() {
     if (!cleaned.length) {
       return { cleaned, issues: ["Please add at least one employee or click “Skip for now”."] };
     }
+    // Check for required fields and valid email format, and collect emails for duplicate check
     const emails = cleaned.map((e) => e.email.toLowerCase());
     const dupes = emails.filter((email, idx) => emails.indexOf(email) !== idx);
     cleaned.forEach((emp, idx) => {
@@ -257,6 +272,7 @@ export default function OrgSetupWizard() {
     return { cleaned, issues };
   }
   async function submitEmployees() {
+    // Prevent multiple submissions
     if (submitting) return;
     if (!orgId) {
       setGlobalError("Please complete the organisation step first.");
@@ -271,13 +287,14 @@ export default function OrgSetupWizard() {
     setEmployeeErrors(null);
     setGlobalError(null);
     try {
+      // API call to add employees in bulk
       await api.post(`/api/organisations/${orgId}/employees/bulk`, { employees: cleaned });
       next();
     } catch (err) {
       const status = err?.response?.status;
       const data = err?.response?.data;
       if (status === 422) {
-        // Your backend may return { existing_emails: [...] } or validation errors
+        // If the API returns validation errors, display them
         if (Array.isArray(data?.existing_emails) && data.existing_emails.length) {
           setEmployeeErrors([
             "Some employees already exist in your organisation:",
@@ -294,9 +311,10 @@ export default function OrgSetupWizard() {
     } finally {7
       setSubmitting(false);
       const handleGatherOsint = async (employees) => {
+        // After successfully adding employees, trigger OSINT data gathering for them
         try {
           const response = await axios.post('/api/osint/gather', employees, {
-            headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }, // Tie to your login
+            headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
           });
         } catch (error) {
           console.error('Error gathering OSINT:', error);
@@ -305,15 +323,16 @@ export default function OrgSetupWizard() {
       handleGatherOsint(cleaned);
     }
   }
+
   // ---------- Step 4 ----------
   function validateSettings(f) {
     const e = {};
     if (!f.frequency) e.frequency = "Please choose how often simulations should run.";
     if (!f.timezone) e.timezone = "Please select a timezone.";
-    // optional: validate startAt if present (datetime-local gives a valid value format)
     return e;
   }
   async function submitSettings() {
+    // Prevent multiple submissions
     if (submitting) return;
     const e = validateSettings(settingsForm);
     setSettingsErrors(e);
@@ -325,7 +344,8 @@ export default function OrgSetupWizard() {
     setSubmitting(true);
     setGlobalError(null);
     try {
-      await api.put(`/api/organisations/${orgId}/settings`, {
+      // API call to save simulation settings for the organisation
+      await api.post(`/api/organisations/${orgId}/settings`, {
         simulation_frequency: settingsForm.frequency,
         timezone: settingsForm.timezone,
         start_at: settingsForm.startAt || null,
@@ -349,7 +369,6 @@ export default function OrgSetupWizard() {
       (e) => e.email.trim() || e.first_name.trim() || e.last_name.trim() || e.job_title.trim() || e.department.trim()
     ).length;
 
-    // Use the fetched timezoneGroups instead of the removed constant
     const tzLabel =
       timezoneGroups
         .flatMap((g) => g.zones)
@@ -393,10 +412,10 @@ export default function OrgSetupWizard() {
   ]);
 
   async function finishSetup() {
-    // No backend "complete" endpoint yet. For now, just redirect to dashboard.
     navigate("/dashboard", { replace: true });
   }
   return (
+    // Container with neural network animation background
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <style jsx>{`
         :root {
@@ -657,7 +676,7 @@ export default function OrgSetupWizard() {
         <div className="flex-1 relative bg-gradient-to-br from-blue-200 via-purple-200 to-indigo-200 lg:min-h-[600px]">
           {/* Neural Network Background Animation */}
           <div className="neural-bg">
-            {/* Simulated nodes (glowing dots) */}
+            {/* glowing dots */}
             <div className="neural-node"></div>
             <div className="neural-node"></div>
             <div className="neural-node"></div>
@@ -686,6 +705,7 @@ export default function OrgSetupWizard() {
   );
 }
 function Stepper({ stepIndex }) {
+  // Visual stepper component to indicate progress through the multi-step wizard
   return (
     <div className="stepper">
       {STEPS.map((s, idx) => (
@@ -704,9 +724,9 @@ function Stepper({ stepIndex }) {
     </div>
   );
 }
-function OrgStep({ form, setForm, errors, submitting, onContinue, industries, sizes, }) {
 
-  // Force it to be an array if somehow undefined
+function OrgStep({ form, setForm, errors, submitting, onContinue, industries, sizes, }) {
+  // Step 1: Organisation details form with fields for name, website, industry, size, and logo upload. Validates inputs and shows errors.
   const safeIndustries = Array.isArray(industries) ? industries : [];
   return (
     <div className="space-y-6">
@@ -799,6 +819,8 @@ function OrgStep({ form, setForm, errors, submitting, onContinue, industries, si
     </div>
   );
 }
+
+// Step 2: Admin account creation form with fields for name, email, password, and confirm password
 function AdminStep({ form, setForm, showPassword, setShowPassword, errors, submitting, onContinue }) {
   return (
     <div className="space-y-6">
@@ -881,6 +903,8 @@ function AdminStep({ form, setForm, showPassword, setShowPassword, errors, submi
     </div>
   );
 }
+
+// Step 3: Employee details form with dynamic rows for adding multiple employees
 function EmployeesStep({ employees, setEmployees, error, submitting, onContinue, onSkip }) {
   function update(idx, key, value) {
     setEmployees((list) => list.map((e, i) => (i === idx ? { ...e, [key]: value } : e)));
@@ -993,6 +1017,8 @@ function EmployeesStep({ employees, setEmployees, error, submitting, onContinue,
     </div>
   );
 }
+
+// Step 4: Simulation frequency and timezone settings form with dropdowns for selecting frequency and timezone
 function FrequencyStep({ form, setForm, errors, submitting, onContinue, frequencies, timezoneGroups }) {
   return (
     <div className="space-y-6">
@@ -1070,6 +1096,8 @@ function FrequencyStep({ form, setForm, errors, submitting, onContinue, frequenc
     </div>
   );
 }
+
+// Step 5: Review step that summarizes all the entered information 
 function ReviewStep({ review, onFinish }) {
   return (
     <div className="space-y-6">
@@ -1110,6 +1138,7 @@ function ReviewStep({ review, onFinish }) {
     </div>
   );
 }
+// Reusable components for sections and summary rows in the review step
 function Section({ title, children }) {
   return (
     <div className="section">

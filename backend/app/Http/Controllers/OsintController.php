@@ -9,6 +9,7 @@ use Carbon\Carbon;
 
 class OsintController extends Controller
 {
+    # Generate OSINT data for an employee
     public function generate(Request $request)
     {
         $request->validate([
@@ -48,6 +49,7 @@ class OsintController extends Controller
                 $domain = parse_url($employee->organisation->website, PHP_URL_HOST) ?? 'company.com';
             }
 
+            # Call the OSINT microservice to gather data
             $response = $client->post('http://127.0.0.1:8001/gather_osint', [
                 'json' => [
                     'full_name' => trim($employee->first_name . ' ' . $employee->last_name),
@@ -93,6 +95,7 @@ class OsintController extends Controller
         }
     }
 
+    # Generate phishing email for an employee based on their OSINT data
     public function generatePhishing(Request $request)
     {
         $request->validate([
@@ -125,12 +128,13 @@ class OsintController extends Controller
         }
     }
 
+    # Helper function to call the phishing generation microservice
     private function generatePhishingForEmployee(Employee $employee)
     {
         $client = new Client([
             'timeout' => 120,
             'connect_timeout' => 30,
-            'verify' => false,  // Disable SSL verification for localhost
+            'verify' => false, // Disable SSL verification for local development
         ]);
 
         $fullName = trim($employee->first_name . ' ' . $employee->last_name);

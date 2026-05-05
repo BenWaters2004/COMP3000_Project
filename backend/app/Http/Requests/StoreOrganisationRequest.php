@@ -8,7 +8,6 @@ class StoreOrganisationRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // In production: return auth()->check() and enforce roles/policies
         return true;
     }
 

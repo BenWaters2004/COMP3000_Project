@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 
 class OrganisationController extends Controller
 {
+    # Create a new organisation
     public function store(StoreOrganisationRequest $request)
     {
         $data = $request->validated();
@@ -33,6 +34,7 @@ class OrganisationController extends Controller
         ], 201);
     }
 
+    # Update organisation details
     public function update(Request $request, Organisation $organisation)
     {
         $user = $request->user();
@@ -66,6 +68,7 @@ class OrganisationController extends Controller
         ]);
     }
 
+    # Get organisation details
     public function show(Organisation $organisation)
     {
         $user = auth()->user();

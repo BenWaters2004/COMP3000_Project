@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { X, Plus, AlertCircle } from "lucide-react";
 
+// Modal component for adding a new employee to the organisation
 export default function AddEmployeeModal({ orgId, onClose, onSuccess, api }) {
   const [form, setForm] = useState({
     first_name: "",
@@ -30,6 +31,7 @@ export default function AddEmployeeModal({ orgId, onClose, onSuccess, api }) {
     }
 
     try {
+        // API call to add employee to the organisation
         const response = await api.post(`/api/organisations/${orgId}/employees`, {
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
@@ -43,6 +45,7 @@ export default function AddEmployeeModal({ orgId, onClose, onSuccess, api }) {
         onSuccess();
         onClose();
     } catch (err) {
+        // Log the error details for debugging
         console.error("Add employee error:", err.response?.data, err.response?.status);
 
         let msg = "Failed to add employee";

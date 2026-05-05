@@ -11,7 +11,7 @@ const api = axios.create({
   },
 });
 
-// Request interceptor: Add auth token if available
+// Add auth token to headers if available
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('auth_token');
   if (token) {
@@ -20,7 +20,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor: Handle 401 (unauthorized) - auto-logout and redirect
+// Handle 401 (unauthorized) - auto-logout and redirect
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -35,12 +35,13 @@ api.interceptors.response.use(
 
 // Auth functions
 export const login = async (credentials) => {
-  const response = await api.post('/auth/login', credentials); // Adjust endpoint if needed
+  const response = await api.post('/auth/login', credentials);
   const { token } = response.data;
   localStorage.setItem('auth_token', token);
   return response.data;
 };
 
+// Logout function that calls API and clears token
 export const logout = async () => {
   try {
     await api.post('/logout');
@@ -56,5 +57,4 @@ export const getMe = async () => {
   return api.get('/me');
 };
 
-// Export the instance as named export for other calls
 export { api };

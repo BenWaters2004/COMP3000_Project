@@ -7,18 +7,101 @@
 
 ## Assessing the Dual-Use Potential of Agentic AI in OSINT-Based Targeted Email Generation
 
-The rise of agentic AI-systems capable of autonomous, multi-step reasoning - has amplified the sophistication of social engineering attacks, such as spear-phishing. Which exploit publicly available data via OSINT techniques. Academic researchers, cybersecurity educators, and AI ethics scholars at universities are now challenged with understanding and mitigating the dual-use risks of advanced AI systems in social engineering. Particularly spear-phishing, while lacking scalable, ethical tools to simulate and study such threats. Existing phishing simulation platforms are often manual, lack AI-driven realism, or fail to integrate comprehensive OSINT workflows, limiting their utility for academic study. </br></br>
-AIDEN (Agentic Intelligence Dual-use Evaluation Network) is a consent-driven, agentic AI research platform that simulates targeted spear-phishing communications within a controlled environment. Operating as a network of interconnected AI agents, AIDEN automates OSINT data collection from a variety of OSINT tools and sources, validates data accuracy through cross-referencing and ranking algorithms, generates hypothetical phishing emails, and evaluates misuse potential. Users initiate the tool with a mandatory consent form, ensuring ethical compliance, with outputs confined to analytical reports and visualisations to prevent real-world harm. </br></br>
-AIDEN enables ethical research by providing a safe environment to study AI-driven social engineering, ensuring simulations are consent-based and harm-free. Its multi-agent architecture enhances scalability, allowing researchers to explore complex OSINT workflows. By analysing misuse risks - such as adversarial exploitation or privacy violations - AIDEN informs policy recommendations and ethical frameworks, supported by safeguards like data encryption, access controls, and audit trails. For educators, AIDEN serves as a teaching tool, enriching cybersecurity and AI ethics curricula with practical insights. For scholars, it facilitates publications and policy briefs on AI governance. By bringing together technical innovation and societal responsibility. AIDEN empowers universities to lead in understanding and mitigating AI’s dual-use challenges, fostering a safer digital world.
+Phishing continues to be the dominant cyber threat to organisations. Agentic AI systems - capable of autonomous, multi-step reasoning and tool use - now make it possible to automate the full reconnaissance to personalised email pipeline that previously required significant manual effort. This project investigates the dual-use risks of such systems by building a controlled, ethically bounded platform that demonstrates how publicly available employee data can be gathered, analysed, and turned into realistic spearphishing simulations for security-awareness purposes.
 
+**AIDEN** (Agentic Intelligence Dual-use Evaluation Network) is a consent-driven organisational platform that allows authorised administrators to:
+- Register and manage their organisation and employee records
+- Automatically collect OSINT via theHarvester (domain reconnaissance), Sherlock (username-based social media discovery), and Have I Been Pwned (breach exposure)
+- Receive ranked findings, risk assessments, and training recommendations
+- Generate structured, highly tailored spear-phishing email drafts (subject, sender details, HTML body, and effectiveness rationale) for review
+- Export OSINT reports as PDFs and employee data as CSV
+- View organisational risk metrics on a dashboard
+
+The platform deliberately stops short of live email delivery, keeping a human reviewer in the loop at all times. All operations are scoped to the authenticated organisation, with caching of recent OSINT results and strict access controls.
+
+### Architecture
+AIDEN is implemented as a clean three-service architecture:
+- **Frontend**: React single-page application with Tailwind CSS, React Router, and Chart.js
+- **Backend**: Laravel API with Sanctum authentication, Eloquent models, and organisation-scoped access control
+- **Agent service**: FastAPI + LangChain (ReAct-style agent) that orchestrates the OSINT tools and LLM-powered ranking/phishing-draft generation
+
+This separation keeps AI-specific dependencies isolated while providing a maintainable, production-oriented web application.
+
+### Ethical & Dual-Use Focus
+The system was explicitly designed with dual-use risks in mind. It provides organisations with actionable insight into their public exposure and the persuasive power of AI-generated personalised lures, while incorporating safeguards such as:
+- Organisation-level data isolation
+- No automatic outbound email capability
+- Human review of all generated drafts
+- Reuse of recent OSINT results to minimise unnecessary data collection
+
+The project therefore serves both as a practical awareness and assessment tool and as a concrete exploration of the governance challenges posed by agentic AI in offensive workflows.
+
+### Technologies
+
+| Layer          | Technologies                                      |
+|----------------|---------------------------------------------------|
+| **Frontend**   | React, Vite, Tailwind CSS, React Router, Chart.js, Axios |
+| **Backend**    | Laravel (PHP), Sanctum, Eloquent, MySQL           |
+| **Agent**      | FastAPI, Python, LangChain, ReAct agent           |
+| **OSINT Tools**| theHarvester, Sherlock, Have I Been Pwned API     |
+| **Other**      | Git submodules, Composer, npm                     |
+
+<br>
+
+## Getting Started
+
+> **Note**: The project consists of **three separate services** that need to run simultaneously (Frontend + Backend + Agent).
+
+#### Prerequisites
+- PHP 8.2+ with Composer
+- Node.js 18+ and npm
+- Python 3.11+
+- MySQL (or compatible database)
+- Git
+
+#### 1. Clone the repository & initialise submodules
+```bash
+git clone https://github.com/BenWaters2004/COMP3000_Project.git
+cd COMP3000_Project
+git submodule update --init --recursive
+```
+#### 2. Backend (Laravel API)
+```bash
+cd backend
+composer install
+cp .env.example .env
+# Edit .env (set database credentials and AGENT_URL=http://localhost:8001)
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve --port=8000
+```
+#### 3. Agent Service (FastAPI + LangChain)
+```bash
+cd ../agent
+python -m venv venv
+source venv/bin/activate          # On Windows use: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env
+# Edit .env and add your LLM API key (e.g. OPENAI_API_KEY) and Have I Been Pwned API key
+uvicorn app:app --reload --port=8001
+```
+> **Note**: theHarvester and Sherlock are included as git submodules. Their own dependencies are usually satisfied by the main requirements.txt above, but if you encounter import errors you can also run their individual setup steps (see their respective READMEs inside the submodules).
+#### 4. Frontend (React + Vite)
+```bash
+cd ../frontend
+npm install
+npm run dev
+```
+The frontend will be available at http://localhost:5173.
+Make sure the Axios baseURL in the frontend points to your Laravel backend (http://localhost:8000).
+
+<br>
 
 ### Project Supervisor
 Nathan Clarke
 
 ### Kanban board and Gantt chart
 [Kanban board link: click here](#) </br></br>
-<img width="940" height="131" alt="image" src="https://github.com/user-attachments/assets/9aa34191-8e6b-4239-ab5b-02c4632b6114" />
-
 
 ## Deadlines
 
@@ -32,3 +115,5 @@ Nathan Clarke
 | 04  | Project ePortfolio Complete        | **May 5th 2026 (15:00)**      | Within 20 working days            |
 | 05  | Showcase                           | **May 7th 2026 (09:00 – 16:00)** | At posters                        |
 | 06  | Viva                               | **w/c 11th May 2026**         | At the end of the Viva            |
+
+---

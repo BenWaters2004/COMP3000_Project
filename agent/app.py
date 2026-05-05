@@ -14,13 +14,14 @@ load_dotenv()
 
 app = FastAPI(title="AIDEN OSINT Agent")
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0.3)
+llm = ChatOpenAI(model="gpt-4.1-mini", temperature=0.3)
 
 # ==================== TOOLS ====================
 
+# TheHarvester
 def run_theharvester(domain: str) -> str:
     try:
-        THEHARVESTER_DIR = "/COMP3000_Project/agent/theHarvester"  # double-check case sensitivity!
+        THEHARVESTER_DIR = "/COMP3000_Project/agent/theHarvester"
         cmd = [
             "uv",
             "run",
@@ -28,14 +29,13 @@ def run_theharvester(domain: str) -> str:
             "theHarvester.py",
             "-d", domain,
             "-l", "300",
-            "-b", "duckduckgo,yahoo,crtsh,dnsdumpster,hackertarget,otx,linkedin"
+            "-b", "duckduckgo,yahoo,crtsh,dnsdumpster,hackertarget,otx,linkedin,urlscan,certspotter,leaklookup,leakix,whoisxml"
         ]
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
             timeout=180,
-            # cwd=THEHARVESTER_DIR   # optional, but --directory already handles it
         )
         output = result.stdout.strip()
         error = result.stderr.strip()
@@ -47,6 +47,7 @@ def run_theharvester(domain: str) -> str:
     except Exception as e:
         return f"TheHarvester error: {str(e)}"
 
+# Sherlock
 def run_sherlock(name: str) -> str:
     """Smart multi-variation Sherlock - fast & effective."""
     try:
@@ -73,6 +74,7 @@ def run_sherlock(name: str) -> str:
     except Exception as e:
         return f"Sherlock error: {str(e)}"
 
+# HaveIBeenPwned
 def run_haveibeenpwned(email: str) -> str:
     try:
         import requests
@@ -124,6 +126,14 @@ Using the following OSINT data about {full_name} ({email}):
 {osint_data}
 
 Generate a highly personalized, realistic spear-phishing email that an attacker might send. Tailor it to the employee's interests, role, or findings from the OSINT (e.g., reference social media, recent events, or personal details).
+
+Rules for high-quality spear-phishing simulation:
+- Use very recent context if available (breach year, social media interests, job title hints)
+- Prefer fear / urgency / curiosity / greed / authority triggers that match the person's profile
+- Spoof sender should be extremely believable (e.g. real colleague name from TheHarvester, IT dept, CEO)
+- Reference real-looking details: "regarding your Canva account from 2022", "your recent LinkedIn post about...", "Q3 forecast review"
+- Keep body professional – attackers almost never sound obviously malicious
+- Never include real clickable malicious links – use placeholders like [malicious-login-link]
 
 Respond with a valid JSON object containing:
 {{

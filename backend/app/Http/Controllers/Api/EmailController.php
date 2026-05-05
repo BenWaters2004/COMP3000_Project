@@ -19,7 +19,7 @@ class EmailController extends Controller
         // fetch top results by score
         $osintData = OsintResult::where('scan_request_id', $scan->id)
             ->orderBy('score', 'desc')->take(20)->get();
-        // call your Python microservice (replace URL with your service)
+        // call Python microservice to generate email content based on OSINT data
         $response = Http::post('http://localhost:5005/generate_email', [
             'osint' => $osintData->map(function ($item) {
                 return [
@@ -32,7 +32,7 @@ class EmailController extends Controller
             })
         ]);
         $content = $response->json('email');
-        // encrypt email content for storage:contentReference[oaicite:4]{index=4}
+        // encrypt email content for storage
         Email::create([
             'scan_request_id' => $scan->id,
             'content' => Crypt::encryptString($content)

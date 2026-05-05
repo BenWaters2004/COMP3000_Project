@@ -3,7 +3,7 @@ import logo2 from './AIDEN_logo_webp.webp';
 import logo3 from './AIDEN_logo_png.png';
 
 
-
+// Exporting assets for use in the application
 export {
   consentBg,
   logo2,

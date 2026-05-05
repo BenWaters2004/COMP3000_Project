@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, RefreshCw } from 'lucide-react';
-import { api } from "../lib/api"; // ← use your consistent api instance
+import { api } from "../lib/api";
 
+// Modal component to display a simulated spear-phishing email for an employee, with training insights
 const PhishingModal = ({ employee, phishingData: propPhishingData, onClose, onGenerate }) => {
   const [phishingData, setPhishingData] = useState(propPhishingData);
   const [loading, setLoading] = useState(false);
@@ -27,6 +28,7 @@ const PhishingModal = ({ employee, phishingData: propPhishingData, onClose, onGe
     loadPhishingEmail();
   }, [employee.id, employee.phishing_email]);
 
+  // Function to generate a new phishing email simulation for the employee
   const handleGenerate = async () => {
     setGenerating(true);
     setError(null);
@@ -36,7 +38,7 @@ const PhishingModal = ({ employee, phishingData: propPhishingData, onClose, onGe
       });
       const newData = res.data.data;
       setPhishingData(newData);
-      onGenerate?.(employee); // callback to parent if needed
+      onGenerate?.(employee);
     } catch (err) {
       setError(err.response?.data?.error || err.message || "Failed to generate phishing email");
     } finally {
@@ -44,6 +46,7 @@ const PhishingModal = ({ employee, phishingData: propPhishingData, onClose, onGe
     }
   };
 
+  // Show loading state while fetching or generating
   if (generating) {
     return (
       <div className="fixed inset-0 bg-black/70 dark:bg-black/80 flex items-center justify-center z-50 p-4 transition-colors duration-300">
@@ -60,6 +63,7 @@ const PhishingModal = ({ employee, phishingData: propPhishingData, onClose, onGe
     );
   }
 
+  // Show error state if generation failed and no existing data to display
   if (error && !phishingData) {
     return (
       <div className="fixed inset-0 bg-black/70 dark:bg-black/80 flex items-center justify-center z-50 p-6 transition-colors duration-300">
@@ -95,6 +99,7 @@ const PhishingModal = ({ employee, phishingData: propPhishingData, onClose, onGe
   const data = phishingData || {};
 
   return (
+    // Main modal container
     <div className="fixed inset-0 bg-black/70 dark:bg-black/80 flex items-center justify-center z-50 p-4 md:p-6 transition-colors duration-300">
       <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-4xl max-h-[95vh] overflow-hidden shadow-2xl flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}

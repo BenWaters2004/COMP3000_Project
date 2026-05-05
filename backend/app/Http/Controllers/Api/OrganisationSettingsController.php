@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 
 class OrganisationSettingsController extends Controller
 {
+    # Update organisation settings
     public function update(Request $request, Organisation $organisation)
     {
         $user = $request->user();
@@ -40,6 +41,7 @@ class OrganisationSettingsController extends Controller
         ]);
     }
 
+    # Get list of industries, for dropdowns
     public function industries()
     {
         return response()->json(
@@ -47,6 +49,7 @@ class OrganisationSettingsController extends Controller
         );
     }
 
+    # Get list of company sizes, for dropdowns
     public function companySizes()
     {
         return response()->json(
@@ -54,6 +57,7 @@ class OrganisationSettingsController extends Controller
         );
     }
 
+    # Get list of simulation frequencies, for dropdowns
     public function frequencies()
     {
         return response()->json(
@@ -63,6 +67,7 @@ class OrganisationSettingsController extends Controller
         );
     }
 
+    # Get list of timezones, for dropdowns
     public function timezones()
     {
         return response()->json(

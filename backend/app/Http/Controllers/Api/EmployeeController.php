@@ -13,7 +13,7 @@ class EmployeeController extends Controller
     {
         $user = $request->user();
 
-        // Ensure the logged-in admin belongs to this organisation
+        // Ensure the logged in admin belongs to this organisation
         if ((int)$user->organisation_id !== (int)$organisation->id) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
@@ -27,8 +27,7 @@ class EmployeeController extends Controller
             'employees.*.department' => ['nullable', 'string', 'max:120'],
         ]);
 
-        // Optional: enforce unique email per organisation
-        // We'll do a quick duplicate check against existing records + within payload.
+        // Check for duplicate emails
         $emails = collect($data['employees'])->pluck('email')->map(fn($e) => strtolower(trim($e)));
 
         if ($emails->count() !== $emails->unique()->count()) {
@@ -50,6 +49,7 @@ class EmployeeController extends Controller
             ], 422);
         }
 
+        # Prepare data for upsert (insert or update if email already exists for this org)
         $rows = array_map(function ($emp) use ($organisation) {
             return [
                 'organisation_id' => $organisation->id,
@@ -65,8 +65,8 @@ class EmployeeController extends Controller
 
         Employee::upsert(
             $rows,
-            ['organisation_id', 'email'],          // unique
-            ['first_name', 'last_name', 'job_title', 'department', 'updated_at'] // fields to update
+            ['organisation_id', 'email'], // unique
+            ['first_name', 'last_name', 'job_title', 'department', 'updated_at']
         );
 
         return response()->json([
@@ -75,6 +75,7 @@ class EmployeeController extends Controller
         ], 201);
     }
 
+    # List employees with optional search
     public function index(Request $request, Organisation $organisation)
     {
         $user = $request->user();
@@ -88,7 +89,7 @@ class EmployeeController extends Controller
             ->orderBy('last_name')
             ->orderBy('first_name');
 
-        // optional search query: ?q=...
+        // optional search query
         if ($request->filled('q')) {
             $q = trim($request->query('q'));
             $query->where(function ($sub) use ($q) {
@@ -105,6 +106,7 @@ class EmployeeController extends Controller
         ]);
     }
 
+    # Add a single employee
     public function store(Request $request, Organisation $organisation)
     {
         $user = $request->user();
@@ -136,6 +138,7 @@ class EmployeeController extends Controller
         ], 201);
     }
 
+    # Delete an employee
     public function destroy(Request $request, Employee $employee)
     {
         $user = $request->user();
@@ -152,6 +155,7 @@ class EmployeeController extends Controller
         ]);
     }
 
+    # Update an employee
     public function update(Request $request, Employee $employee)
     {
         $user = $request->user();

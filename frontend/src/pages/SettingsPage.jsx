@@ -7,6 +7,7 @@ import {
   Eye, EyeOff
 } from "lucide-react";
 
+// Page component for managing organisation settings, branding and team access
 export default function OrganisationSettingsPage() {
   const navigate = useNavigate();
 
@@ -97,7 +98,7 @@ export default function OrganisationSettingsPage() {
       setCompanySizes(sizesRes.data.map(v => ({ value: v, label: v })) || []);
       setFrequencies(freqRes.data || []);
 
-      // Timezones: flatten if grouped
+      // Timezones
       const flatTz = Array.isArray(tzRes.data)
         ? tzRes.data.flatMap(group => group.zones || group || [])
         : [];
@@ -140,6 +141,7 @@ export default function OrganisationSettingsPage() {
   };
 
   const handleLogo = (e) => {
+    // Handle logo file selection and preview
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -171,9 +173,9 @@ export default function OrganisationSettingsPage() {
     setSuccess(null);
 
     try {
-      // PART 1: Organisation update (use POST + _method)
+      // PART 1: Organisation update
       const fd = new FormData();
-      fd.append('_method', 'POST');          // ← this is the key!
+      fd.append('_method', 'POST');
       fd.append('name', form.name.trim());
       fd.append('website', (form.website || '').trim());
       fd.append('industry', form.industry || '');
@@ -185,9 +187,7 @@ export default function OrganisationSettingsPage() {
       });
 
 
-      // ────────────────────────────────────────────────
-      // PART 2: Update settings (pure JSON – no FormData)
-      // ────────────────────────────────────────────────
+      // PART 2: Update settings
       const settingsRes = await api.post(`/api/organisations/${orgId}/settings`, {
         simulation_frequency: form.simulation_frequency,
         timezone: form.timezone,
@@ -202,14 +202,12 @@ export default function OrganisationSettingsPage() {
 
       setSuccess("Organisation settings saved successfully");
       setLogoFile(null);
-      await loadAllData(); // refresh everything
+      await loadAllData();
     } catch (err) {
 
       let msg = "Failed to save changes";
 
       if (err.response) {
-        // HTTP error (422, 403, 405, etc.)
-
         if (err.response.status === 422) {
           const errors = err.response.data.errors || {};
           msg = Object.values(errors)[0]?.[0] || err.response.data.message || msg;
@@ -223,10 +221,9 @@ export default function OrganisationSettingsPage() {
           msg = "Organisation not found – please reload";
         }
       } else if (err.request) {
-        // No response received (network error, CORS, timeout)
+        // No response received
         msg = "Network error – cannot reach server. Check connection or backend status.";
       } else {
-        // Something else (e.g. TypeError)
         msg = `Unexpected error: ${err.message}`;
       }
 
@@ -252,7 +249,7 @@ export default function OrganisationSettingsPage() {
       return;
     }
 
-    // Basic frontend validation (optional but helpful)
+    // Basic frontend validation
     if (!newAdmin.name.trim() || !newAdmin.email.trim() || !newAdmin.password.trim()) {
       setError("All fields are required.");
       setAddingAdmin(false);
@@ -265,6 +262,7 @@ export default function OrganisationSettingsPage() {
     }
 
     try {
+      // API call to add new admin
       const response = await api.post(`/api/organisations/${orgId}/admins`, {
         name: newAdmin.name.trim(),
         email: newAdmin.email.trim(),
@@ -316,6 +314,7 @@ export default function OrganisationSettingsPage() {
     }
 
     try {
+      // API call to delete admin
       await api.delete(`/api/organisations/${orgId}/admins/${adminId}`);
       setSuccess("Admin removed");
       setAdmins(prev => prev.filter(a => a.id !== adminId));
@@ -339,7 +338,6 @@ export default function OrganisationSettingsPage() {
 
     try {
       const res = await api.post(`/api/organisations/${orgId}/admins/${adminId}/reset-password`);
-      console.log("Reset response:", res.data);
       setSuccess("Password reset link sent (check console for prototype token)");
     } catch (err) {
       console.error("Reset error:", err.response);
@@ -357,6 +355,7 @@ export default function OrganisationSettingsPage() {
   }
 
   return (
+    // Main content area for organisation settings management
     <div className="p-6 md:p-8 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
         <div>
@@ -605,7 +604,7 @@ export default function OrganisationSettingsPage() {
                       </div>
                     </div>
 
-                    {/* Actions – new row, full width on mobile */}
+                    {/* Actions – full width on mobile */}
                     <div className="flex flex-wrap gap-3 text-sm">
                       <button
                         onClick={() => handleResetPassword(admin.id)}

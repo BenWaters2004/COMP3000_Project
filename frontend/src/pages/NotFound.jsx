@@ -111,19 +111,16 @@ export default function NotFound() {
 
         {/* Right: Visual / branding side – similar to login right panel */}
         <div className="flex-1 relative bg-gradient-to-br from-blue-100 via-purple-100 to-indigo-100 min-h-[400px] lg:min-h-auto flex items-center justify-center">
-          {/* Optional: larger logo or fun AI-themed illustration */}
           <div className="text-center">
             <h3 className="text-6xl font-bold text-indigo-700/80 mb-4">AIDEN</h3>
             <p className="text-xl text-gray-700/80 max-w-xs mx-auto">
               Agentic Intelligence Dual-use Evaluation Network
             </p>
           </div>
-
-          {/* You can replace with <img src="/blank_logo.png" ... /> like in login */}
         </div>
       </div>
 
-      {/* Extra global fade animation helper */}
+      {/* Extra global fade animation */}
       <style jsx>{`
         .animation-delay-200 { animation-delay: 0.2s; }
         .animation-delay-400 { animation-delay: 0.4s; }
