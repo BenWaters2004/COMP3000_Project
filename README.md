@@ -100,8 +100,8 @@ Make sure the Axios baseURL in the frontend points to your Laravel backend (http
 ### Project Supervisor
 Nathan Clarke
 
-### Kanban board and Gantt chart
-[Kanban board link: click here](#) </br></br>
+### Kanban board (Trello)
+[Kanban board link: click here](https://trello.com/b/QndwxjIW/comp3000) </br></br>
 
 ## Deadlines
 
